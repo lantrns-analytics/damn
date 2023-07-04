@@ -45,7 +45,11 @@ def ls():
     response.raise_for_status()
     
     data = response.json()
-    click.echo(json.dumps(data, indent=2))
+
+    # Extract asset keys and print them
+    for node in data['data']['assetsOrError']['nodes']:
+        asset_key = "/".join(node['key']['path'])
+        click.echo(f'- {asset_key}')
 
 if __name__ == '__main__':
     cli()
