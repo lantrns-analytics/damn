@@ -219,13 +219,13 @@ def asset_details(asset):
         freshness_policy_cron = freshness_policy.get('cronSchedule', 'Not available') if freshness_policy is not None else 'Not available'
 
         click.echo(colored("Asset attributes:", 'magenta'))
-        click.echo(colored(f"Key: ", 'yellow') + colored(f"{asset}", 'green'))
-        click.echo(colored(f"Description: ", 'yellow') + colored(f"{description}", 'green'))
-        click.echo(colored(f"Compute kind: ", 'yellow') + colored(f"{compute_kind}", 'green'))
-        click.echo(colored(f"Is partitioned: ", 'yellow') + colored(f"{is_partitioned}", 'green'))
-        click.echo(colored(f"Auto-materialization policy: ", 'yellow') + colored(f"{auto_materialize_policy}", 'green'))
-        click.echo(colored(f"Freshess policy (maximum lag minutes): ", 'yellow') + colored(f"{freshness_policy_lag}", 'green'))
-        click.echo(colored(f"Freshess policy (cron schedule): ", 'yellow') + colored(f"{freshness_policy_cron}", 'green'))
+        click.echo(colored(f"- Key: ", 'yellow') + colored(f"{asset}", 'green'))
+        click.echo(colored(f"- Description: ", 'yellow') + colored(f"{description}", 'green'))
+        click.echo(colored(f"- Compute kind: ", 'yellow') + colored(f"{compute_kind}", 'green'))
+        click.echo(colored(f"- Is partitioned: ", 'yellow') + colored(f"{is_partitioned}", 'green'))
+        click.echo(colored(f"- Auto-materialization policy: ", 'yellow') + colored(f"{auto_materialize_policy}", 'green'))
+        click.echo(colored(f"- Freshess policy (maximum lag minutes): ", 'yellow') + colored(f"{freshness_policy_lag}", 'green'))
+        click.echo(colored(f"- Freshess policy (cron schedule): ", 'yellow') + colored(f"{freshness_policy_cron}", 'green'))
 
         click.echo(colored("\nUpstream assets:", 'magenta'))
         upstream_assets = asset_info['definition']['dependencyKeys']
@@ -251,7 +251,7 @@ def asset_details(asset):
 
             click.echo(colored("\nLatest materialization's metadata entries:", 'magenta'))
             timestamp = last_materialization.get('timestamp', 'Not available')
-            click.echo(colored(f"Last materialization timestamp: ", 'yellow') + colored(f"{timestamp}", 'green'))
+            click.echo(colored(f"- Last materialization timestamp: ", 'yellow') + colored(f"{timestamp}", 'green'))
             
             # Handle 'metadataEntries'
             metadata_entries = last_materialization.get('metadataEntries', [])
@@ -288,7 +288,7 @@ def asset_details(asset):
                     elif typename == 'NullMetadataEntry':
                         value = 'Null'
 
-                    click.echo(colored(f"{label}: ", 'yellow') + colored(f"{value}", 'green'))
+                    click.echo(colored(f"- {label}: ", 'yellow') + colored(f"{value}", 'green'))
             else:
                 click.echo("No metadata entries.")
         else:
