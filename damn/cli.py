@@ -110,6 +110,79 @@ def asset_details(asset):
               path
             }}
           }}
+          assetMaterializations(limit: 1){{
+            timestamp
+            metadataEntries{{
+              __typename
+              ... on FloatMetadataEntry{{
+                label
+                description
+                floatValue
+              }}
+              ... on IntMetadataEntry{{
+                label
+                description
+                intValue
+              }}
+              ... on JsonMetadataEntry{{
+                label
+                description
+                jsonString
+              }}
+              ... on BoolMetadataEntry{{
+                label
+                description
+                boolValue
+              }}
+              ... on MarkdownMetadataEntry{{
+                label
+                description
+                mdStr
+              }}
+              ... on PathMetadataEntry{{
+                label
+                description
+                path
+              }}
+              ... on NotebookMetadataEntry{{
+                label
+                description
+                path
+              }}
+              ... on PythonArtifactMetadataEntry{{
+                label
+                description
+                module
+                name
+              }}
+              ... on TextMetadataEntry{{
+                label
+                description
+                text
+              }}
+              ... on UrlMetadataEntry{{
+                label
+                description
+                url
+              }}
+              ... on PipelineRunMetadataEntry{{
+                label
+                description
+                runId
+              }}
+              ... on AssetMetadataEntry{{
+                label
+                description
+                assetKey{{
+                  path
+                }}
+              }}
+              ... on NullMetadataEntry{{
+                label
+                description
+              }}
+            }}
+          }}
         }}
         ... on AssetNotFoundError {{
           message
@@ -133,8 +206,6 @@ def asset_details(asset):
         click.echo(f"Error: {data['data']['assetOrError']['message']}")
     else:
         asset_info = data["data"]["assetOrError"]
-        click.echo(f"Asset details for {asset}:\n")
-
         # Use the get method to safely access the keys in the dictionary
         description = asset_info['definition'].get('description', 'Not available')
         compute_kind = asset_info['definition'].get('computeKind', 'Not available')
@@ -147,6 +218,8 @@ def asset_details(asset):
         freshness_policy_lag = freshness_policy.get('maximumLagMinutes', 'Not available') if freshness_policy is not None else 'Not available'
         freshness_policy_cron = freshness_policy.get('cronSchedule', 'Not available') if freshness_policy is not None else 'Not available'
 
+        click.echo(colored("Asset attributes:", 'magenta'))
+        click.echo(colored(f"Key: ", 'yellow') + colored(f"{asset}", 'green'))
         click.echo(colored(f"Description: ", 'yellow') + colored(f"{description}", 'green'))
         click.echo(colored(f"Compute kind: ", 'yellow') + colored(f"{compute_kind}", 'green'))
         click.echo(colored(f"Is partitioned: ", 'yellow') + colored(f"{is_partitioned}", 'green'))
@@ -168,9 +241,66 @@ def asset_details(asset):
             for path in downstream_assets:
                 click.echo(colored(f"- {'/'.join(path['path'])}", 'cyan'))
         else:
-            click.echo("- None") 
+            click.echo("- None")
+        
+        # Handle 'assetMaterializations'
+        asset_materializations = asset_info.get('assetMaterializations', [])
+        if asset_materializations:
+            # Get the most recent materialization (it should be the first since we limited it to 1)
+            last_materialization = asset_materializations[0]
+
+            click.echo(colored("\nLatest materialization's metadata entries:", 'magenta'))
+            timestamp = last_materialization.get('timestamp', 'Not available')
+            click.echo(colored(f"Last materialization timestamp: ", 'yellow') + colored(f"{timestamp}", 'green'))
+            
+            # Handle 'metadataEntries'
+            metadata_entries = last_materialization.get('metadataEntries', [])
+            if metadata_entries:
+                for entry in metadata_entries:
+                    label = entry.get('label', 'Not available')
+                    description = entry.get('description', 'Not available')
+                    typename = entry.get('__typename')
+
+                    value = 'Not available'
+                    if typename == 'FloatMetadataEntry':
+                        value = entry.get('floatValue', 'Not available')
+                    elif typename == 'IntMetadataEntry':
+                        value = entry.get('intValue', 'Not available')
+                    elif typename == 'JsonMetadataEntry':
+                        value = entry.get('jsonString', 'Not available')
+                    elif typename == 'BoolMetadataEntry':
+                        value = entry.get('boolValue', 'Not available')
+                    elif typename == 'MarkdownMetadataEntry':
+                        value = entry.get('mdStr', 'Not available')
+                    elif typename == 'PathMetadataEntry' or typename == 'NotebookMetadataEntry':
+                        value = entry.get('path', 'Not available')
+                    elif typename == 'PythonArtifactMetadataEntry':
+                        value = f"module: {entry.get('module', 'Not available')}, name: {entry.get('name', 'Not available')}"
+                    elif typename == 'TextMetadataEntry':
+                        value = entry.get('text', 'Not available')
+                    elif typename == 'UrlMetadataEntry':
+                        value = entry.get('url', 'Not available')
+                    elif typename == 'PipelineRunMetadataEntry':
+                        value = entry.get('runId', 'Not available')
+                    elif typename == 'AssetMetadataEntry':
+                        asset_key_path = entry.get('assetKey', {}).get('path', 'Not available')
+                        value = '/'.join(asset_key_path) if asset_key_path != 'Not available' else 'Not available'
+                    elif typename == 'NullMetadataEntry':
+                        value = 'Null'
+
+                    click.echo(colored(f"{label}: ", 'yellow') + colored(f"{value}", 'green'))
+            else:
+                click.echo("No metadata entries.")
+        else:
+            click.echo("No asset materializations.")
 
 
+@cli.command()
+@click.option('--asset', default=None, help='Get asset metrics')
+def metrics(asset):
+    """List your asset's metrics"""
+    click.echo(colored(f"Asset: ", 'yellow') + colored(f"{asset}", 'green'))
+        
 
 
 if __name__ == '__main__':
