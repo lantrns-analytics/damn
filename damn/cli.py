@@ -76,9 +76,11 @@ def list_assets(prefix):
     data = response.json()
 
     # Extract asset keys and print them
+    click.echo('\n')
     for node in data['data']['assetsOrError']['nodes']:
         asset_key = "/".join(node['key']['path'])
         click.echo(colored(f'- {asset_key}', 'cyan'))
+    click.echo('\n')
 
 
 def asset_details(asset):
@@ -201,6 +203,7 @@ def asset_details(asset):
     
     data = response.json()
 
+    click.echo('\n')
     # Check if an error occurred and print the error message or asset details
     if data["data"]["assetOrError"]["__typename"] == "AssetNotFoundError":
         click.echo(f"Error: {data['data']['assetOrError']['message']}")
@@ -293,13 +296,16 @@ def asset_details(asset):
                 click.echo("No metadata entries.")
         else:
             click.echo("No asset materializations.")
+    click.echo('\n')
 
 
 @cli.command()
 @click.option('--asset', default=None, help='Get asset metrics')
 def metrics(asset):
     """List your asset's metrics"""
+    click.echo('\n')
     click.echo(colored(f"Asset: ", 'yellow') + colored(f"{asset}", 'green'))
+    click.echo('\n')
         
 
 

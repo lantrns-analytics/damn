@@ -36,63 +36,21 @@ Here are some examples of how to use this CLI tool:
 foo@bar:~$ damn ls
 ```
 
-Output
-```bash
-- airbyte/protest_groupings
-- data_warehouse/actors_dim
-- data_warehouse/events_actors_bridge
-- data_warehouse/events_fct
-- data_warehouse/events_observations_bridge
-- ...
-```
+<img src="resources/images/damn_ls.png" width="500px" />
 
-### List all assets within a specific group
+### List all assets for a specifc key group
 ```bash
 foo@bar:~$ damn ls --prefix gdelt
 ```
 
-Output
-```bash
-- gdelt/gdelt_article_entity_extraction
-- gdelt/gdelt_article_summaries
-- gdelt/gdelt_articles_enhanced
-- gdelt/gdelt_enhanced_articles
-- gdelt/gdelt_events
-- ...
-```
+<img src="resources/images/damn_ls_prefix.png" width="400px" />
 
 ### Get details for a specific asset
 ```bash
 foo@bar:~$ damn ls gdelt/gdelt_gkg_articles
 ```
 
-Output
-```bash
-Asset attributes:
-- Key: gdelt/gdelt_gkg_articles
-- Description: List of gkg articles mined on GDELT
-- Compute kind: None
-- Is partitioned: True
-- Auto-materialization policy: EAGER
-- Freshess policy (maximum lag minutes): Not available
-- Freshess policy (cron schedule): Not available
-
-Upstream assets:
-- None
-
-Downstream assets:
-- data_warehouse/staging/stg__gdelt__articles
-- gdelt/gdelt_articles_enhanced
-
-Latest materialization metadata entries:
-- Last materialization timestamp: 1688659402892
-- s3_path: s3://discursus-io/sources/gdelt/20230706/20230706154500.articles.csv
-- rows: 11
-- min_gdelt_gkg_article_id: 20230706154500-1138
-- max_gdelt_gkg_article_id: 20230706154500-431
-- path: platform/gdelt/gdelt_gkg_articles/20230706154500
-- uri: s3://discursus-io/platform/gdelt/gdelt_gkg_articles
-```
+<img src="resources/images/damn_ls_asset.png" width="550px" />
 
 
 ## Contribution
