@@ -17,64 +17,7 @@ headers = {
 }
 
 
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-@click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-def ls(prefix):
-    """List your platform's data assets"""
-    if prefix:
-      prefix_list = prefix.split('/')
-      query = f"""
-      query AssetsQuery {{
-        assetsOrError(prefix: {json.dumps(prefix_list)}) {{
-          ... on AssetConnection {{
-            nodes {{
-              key {{
-                path
-              }}
-            }}
-          }}
-        }}
-      }}
-      """
-    else:
-      query = """
-      query AssetsQuery {
-        assetsOrError {
-          ... on AssetConnection {
-            nodes {
-              key {
-                path
-              }
-            }
-          }
-        }
-      }
-      """
-
-    response = requests.post(
-        GRAPHQL_URL, # type: ignore
-        headers=headers,
-        json={"query": query}
-    )
-    
-    response.raise_for_status()
-    
-    data = response.json()
-
-    # Extract asset keys and print them
-    click.echo('\n')
-    for node in data['data']['assetsOrError']['nodes']:
-        asset_key = "/".join(node['key']['path'])
-        click.echo(colored(f'- {asset_key}', 'cyan'))
-    click.echo('\n')
-
-
-@cli.command()
+@click.command()
 @click.argument('asset', required=True)
 def show(asset):
     """Show details for a specific asset"""
@@ -290,17 +233,3 @@ def show(asset):
         else:
             click.echo("No asset materializations.")
     click.echo('\n')
-
-
-@cli.command()
-@click.option('--asset', default=None, help='Get asset metrics')
-def metrics(asset):
-    """List your asset's metrics"""
-    click.echo('\n')
-    click.echo(colored(f"Asset: ", 'yellow') + colored(f"{asset}", 'green'))
-    click.echo('\n')
-        
-
-
-if __name__ == '__main__':
-    cli()
