@@ -5,20 +5,20 @@ from termcolor import colored
 
 from .utils import load_config 
 
-# Get connector configs
-dagster_config = load_config('dagster', 'prod')
-
-# Set headers
-headers = {
-    "Content-Type": "application/json",
-    "Dagster-Cloud-Api-Token": dagster_config['api_token'],
-}
-
-
 @click.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-def ls(prefix):
+@click.option('--profile', default='prod', help='Profile to use')
+def ls(prefix, profile):
     """List your platform's data assets"""
+    # Get connector configs
+    dagster_config = load_config('dagster', profile)
+
+    # Set headers
+    headers = {
+        "Content-Type": "application/json",
+        "Dagster-Cloud-Api-Token": dagster_config['api_token'],
+    }
+
     if prefix:
       prefix_list = prefix.split('/')
       query = f"""
