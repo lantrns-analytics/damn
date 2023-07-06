@@ -24,16 +24,7 @@ def cli():
 
 @cli.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-@click.option('--asset', default=None, help='Get asset definition and dependancies')
-def ls(prefix, asset):
-    """List your platform's data assets"""
-    if asset:
-        asset_details(asset)
-    else:
-        list_assets(prefix)
-
-
-def list_assets(prefix):
+def ls(prefix):
     """List your platform's data assets"""
     if prefix:
       prefix_list = prefix.split('/')
@@ -83,8 +74,10 @@ def list_assets(prefix):
     click.echo('\n')
 
 
-def asset_details(asset):
-    """Print details for a single asset."""
+@cli.command()
+@click.argument('asset', required=True)
+def show(asset):
+    """Show details for a specific asset"""
     # Split the asset key into a list of strings
     asset_key = asset.split("/")
 
