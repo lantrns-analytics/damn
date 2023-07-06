@@ -1,26 +1,24 @@
-import os
 import json
 import click
 import requests
-from dotenv import load_dotenv
 from termcolor import colored
 
-# Load environment variables
-load_dotenv()
-
-GRAPHQL_URL = os.getenv("DAGSTER_GRAPHQL_URL")
-API_TOKEN = os.getenv("DAGSTER_CLOUD_API_TOKEN")
-
-headers = {
-    "Content-Type": "application/json",
-    "Dagster-Cloud-Api-Token": API_TOKEN,
-}
-
+from .utils import load_config 
 
 @click.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-def ls(prefix):
+@click.option('--profile', default='prod', help='Profile to use')
+def ls(prefix, profile):
     """List your platform's data assets"""
+    # Get connector configs
+    dagster_config = load_config('dagster', profile)
+
+    # Set headers
+    headers = {
+        "Content-Type": "application/json",
+        "Dagster-Cloud-Api-Token": dagster_config['api_token'],
+    }
+
     if prefix:
       prefix_list = prefix.split('/')
       query = f"""
@@ -52,7 +50,7 @@ def ls(prefix):
       """
 
     response = requests.post(
-        GRAPHQL_URL, # type: ignore
+        dagster_config['endpoint'], # type: ignore
         headers=headers, # type: ignore
         json={"query": query}
     )

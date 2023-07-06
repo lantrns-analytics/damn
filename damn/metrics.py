@@ -1,26 +1,23 @@
-import os
 import json
 import click
 import requests
-from dotenv import load_dotenv
 from termcolor import colored
 
-# Load environment variables
-load_dotenv()
-
-GRAPHQL_URL = os.getenv("DAGSTER_GRAPHQL_URL")
-API_TOKEN = os.getenv("DAGSTER_CLOUD_API_TOKEN")
-
-headers = {
-    "Content-Type": "application/json",
-    "Dagster-Cloud-Api-Token": API_TOKEN,
-}
-
+from .utils import load_config 
 
 @click.command()
 @click.option('--asset', default=None, help='Get asset metrics')
-def metrics(asset):
+@click.option('--profile', default='prod', help='Profile to use')
+def metrics(asset, profile):
     """List your asset's metrics"""
+    # Get connector configs
+    dagster_config = load_config('dagster', profile)
+
+    # Set headers
+    headers = {
+        "Content-Type": "application/json",
+        "Dagster-Cloud-Api-Token": dagster_config['api_token'],
+    }
     click.echo('\n')
     click.echo(colored(f"Asset: ", 'yellow') + colored(f"{asset}", 'green'))
     click.echo('\n')

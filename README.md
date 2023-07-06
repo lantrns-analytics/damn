@@ -19,13 +19,52 @@ To install the DAMN tool, run the following command:
 pip install damn-tool
 ```
 
-## Connectors
-The DAMN tool depends on connectors to your platform's services, such as orchestrators, data warehouses, file storage, API, etc.
+<br/><br/>
 
+
+## Connector Configuration
+The DAMN tool leverages various connectors to interact with different data systems. Configuring these connectors is done via a YAML file located at `~/.damn/connectors.yml`.
+
+### YAML Configuration Structure
+The configuration file uses the following structure:
+
+```yaml
+connector_name:
+  profile_name:
+    param1: value1
+    param2: value2
+```
+
+- connector_name: The name of the connector (e.g., dagster, dbt, s3, etc.).
+- profile_name: The name of the profile for the connector. You can have multiple profiles per connector (e.g., prod, dev, test, etc.).
+- param1, param2, etc.: The parameters needed for each connector. The required parameters will depend on the specific connector. For example, a Dagster connector might require endpoint and api_token.
+### Switching Between Profiles
+The active profile for each connector can be changed by specifying the profile when running damn commands. By default, damn will use the prod profile if no profile is specified.
+
+Example usage:
+
+```bash
+damn ls --profile dev
+```
+
+<br/><br/>
+
+
+## Connectors
 ### Dagster
-This is for the moment the default and only connector supported by the DAMN tool. You'll need to set the following 2 environment variables to make it work:
-- DAGSTER_GRAPHQL_URL, which points to your Dagster GraphQL instance
-- DAGSTER_CLOUD_API_TOKEN, which is to authenticate you with your Dagster GraphQL instance
+This is for the moment the default and only connector supported by the DAMN tool. Here's an example configuration for a dagster connector with prod and dev profiles:
+
+```yaml
+dagster:
+  prod:
+    endpoint: https://your-dagster-instance.com/prod/graphql
+    api_token: your-api-token
+  dev:
+    endpoint: https://your-dagster-instance.com/dev/graphql
+    api_token: your-dev-api-token
+```
+
+<br/><br/>
 
 
 ## Usage
@@ -52,9 +91,13 @@ foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 
 <img src="resources/images/damn_ls_asset.png" width="550px" />
 
+<br/><br/>
+
 
 ## Contribution
 Contributions to the DAMN tool are always welcome. Whether it's feature requests, bug fixes, or new features, your contribution is appreciated.
+
+<br/><br/>
 
 
 ## License
