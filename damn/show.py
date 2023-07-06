@@ -1,19 +1,17 @@
-import os
 import json
 import click
 import requests
-from dotenv import load_dotenv
 from termcolor import colored
 
-# Load environment variables
-load_dotenv()
+from .utils import load_config 
 
-GRAPHQL_URL = os.getenv("DAGSTER_GRAPHQL_URL")
-API_TOKEN = os.getenv("DAGSTER_CLOUD_API_TOKEN")
+# Get connector configs
+dagster_config = load_config('dagster', 'prod')
 
+# Set headers
 headers = {
     "Content-Type": "application/json",
-    "Dagster-Cloud-Api-Token": API_TOKEN,
+    "Dagster-Cloud-Api-Token": dagster_config['api_token'],
 }
 
 
@@ -130,7 +128,7 @@ def show(asset):
     """
 
     response = requests.post(
-        GRAPHQL_URL, # type: ignore
+        dagster_config['endpoint'], # type: ignore
         headers=headers,
         json={"query": query}
     )
