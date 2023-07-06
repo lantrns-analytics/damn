@@ -31,23 +31,23 @@ This is for the moment the default and only connector supported by the DAMN tool
 ## Usage
 Here are some examples of how to use this CLI tool:
 
-### List all assets
+### List assets
 ```bash
 foo@bar:~$ damn ls
 ```
 
 <img src="resources/images/damn_ls.png" width="500px" />
 
-### List all assets for a specifc key group
+List all assets for a specifc key group
 ```bash
 foo@bar:~$ damn ls --prefix gdelt
 ```
 
 <img src="resources/images/damn_ls_prefix.png" width="400px" />
 
-### Get details for a specific asset
+### Show details for a specific asset
 ```bash
-foo@bar:~$ damn ls gdelt/gdelt_gkg_articles
+foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 ```
 
 <img src="resources/images/damn_ls_asset.png" width="550px" />
