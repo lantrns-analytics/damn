@@ -3,11 +3,12 @@ import json
 import click
 import requests
 from dotenv import load_dotenv
+from termcolor import colored
 
 # Load environment variables
 load_dotenv()
 
-GRAPHQL_URL = "https://discursus.dagster.cloud/prod/graphql"
+GRAPHQL_URL = os.getenv("DAGSTER_GRAPHQL_URL")
 API_TOKEN = os.getenv("DAGSTER_CLOUD_API_TOKEN")
 
 headers = {
@@ -23,7 +24,7 @@ def cli():
 
 @cli.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-@click.option('--asset', default=None, help='Get asset definition items and dependancies')
+@click.option('--asset', default=None, help='Get asset definition and dependancies')
 def ls(prefix, asset):
     """List your platform's data assets"""
     if asset:
@@ -65,7 +66,7 @@ def list_assets(prefix):
       """
 
     response = requests.post(
-        GRAPHQL_URL,
+        GRAPHQL_URL, # type: ignore
         headers=headers,
         json={"query": query}
     )
@@ -118,7 +119,7 @@ def asset_details(asset):
     """
 
     response = requests.post(
-        GRAPHQL_URL,
+        GRAPHQL_URL, # type: ignore
         headers=headers,
         json={"query": query}
     )
@@ -138,35 +139,36 @@ def asset_details(asset):
         description = asset_info['definition'].get('description', 'Not available')
         compute_kind = asset_info['definition'].get('computeKind', 'Not available')
         is_partitioned = asset_info['definition'].get('isPartitioned', 'Not available')
-        auto_materialize_policy = asset_info['definition']['autoMaterializePolicy'].get('policyType', 'Not available')
+        auto_materialize_policy_obj = asset_info['definition'].get('autoMaterializePolicy', None)
+        auto_materialize_policy = auto_materialize_policy_obj.get('policyType', 'Not available') if auto_materialize_policy_obj is not None else 'Not available'
 
         # Check if freshnessPolicy is not None before accessing its fields
         freshness_policy = asset_info['definition'].get('freshnessPolicy', {})
         freshness_policy_lag = freshness_policy.get('maximumLagMinutes', 'Not available') if freshness_policy is not None else 'Not available'
         freshness_policy_cron = freshness_policy.get('cronSchedule', 'Not available') if freshness_policy is not None else 'Not available'
 
-        click.echo(f"Description: {description}")
-        click.echo(f"Compute kind: {compute_kind}")
-        click.echo(f"Is partitioned: {is_partitioned}")
-        click.echo(f"Auto-materialization policy: {auto_materialize_policy}")
-        click.echo(f"Freshess policy (maximum lag minutes): {freshness_policy_lag}")
-        click.echo(f"Freshess policy (cron schedule): {freshness_policy_cron}")
+        click.echo(colored(f"Description: ", 'yellow') + colored(f"{description}", 'green'))
+        click.echo(colored(f"Compute kind: ", 'yellow') + colored(f"{compute_kind}", 'green'))
+        click.echo(colored(f"Is partitioned: ", 'yellow') + colored(f"{is_partitioned}", 'green'))
+        click.echo(colored(f"Auto-materialization policy: ", 'yellow') + colored(f"{auto_materialize_policy}", 'green'))
+        click.echo(colored(f"Freshess policy (maximum lag minutes): ", 'yellow') + colored(f"{freshness_policy_lag}", 'green'))
+        click.echo(colored(f"Freshess policy (cron schedule): ", 'yellow') + colored(f"{freshness_policy_cron}", 'green'))
 
-        click.echo("\nUpstream assets:")
+        click.echo(colored("\nUpstream assets:", 'magenta'))
         upstream_assets = asset_info['definition']['dependencyKeys']
         if upstream_assets:
             for path in upstream_assets:
-                click.echo(f"- {'/'.join(path['path'])}")
+                click.echo(colored(f"- {'/'.join(path['path'])}", 'cyan'))
         else:
             click.echo("- None")
 
-        click.echo("\nDownstream assets:")
+        click.echo(colored("\nDownstream assets:", 'magenta'))
         downstream_assets = asset_info['definition']['dependedByKeys']
         if downstream_assets:
             for path in downstream_assets:
-                click.echo(f"- {'/'.join(path['path'])}")
+                click.echo(colored(f"- {'/'.join(path['path'])}", 'cyan'))
         else:
-            click.echo("- None")
+            click.echo("- None") 
 
 
 
