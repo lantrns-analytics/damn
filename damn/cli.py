@@ -78,7 +78,7 @@ def list_assets(prefix):
     # Extract asset keys and print them
     for node in data['data']['assetsOrError']['nodes']:
         asset_key = "/".join(node['key']['path'])
-        click.echo(f'- {asset_key}')
+        click.echo(colored(f'- {asset_key}', 'cyan'))
 
 
 def asset_details(asset):
