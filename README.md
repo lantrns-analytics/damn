@@ -75,21 +75,21 @@ Here are some examples of how to use this CLI tool:
 foo@bar:~$ damn ls
 ```
 
-<img src="resources/images/damn_ls.png" width="500px" />
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.1/resources/images/damn_ls.png" width="500px" />
 
 List all assets for a specifc key group
 ```bash
 foo@bar:~$ damn ls --prefix gdelt
 ```
 
-<img src="resources/images/damn_ls_prefix.png" width="400px" />
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.1/resources/images/damn_ls_prefix.png" width="400px" />
 
 ### Show details for a specific asset
 ```bash
 foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 ```
 
-<img src="resources/images/damn_ls_asset.png" width="550px" />
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.1/resources/images/damn_ls_asset.png" width="550px" />
 
 <br/><br/>
 

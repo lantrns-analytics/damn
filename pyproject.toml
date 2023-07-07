@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "damn"
-version = "0.1.0"
+name = "damn-tool"
+version = "0.1.1"
 description = "The DAMN (Data Assets Metric Navigation) tool extracts and reports metrics about your data assets"
 authors = ["Olivier Dupuis <odupuis@lantrns.co>"]
 readme = "README.md"
@@ -18,4 +18,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-damn = "damn.__init__:cli"
+damn = "damn_tool.__init__:cli"
