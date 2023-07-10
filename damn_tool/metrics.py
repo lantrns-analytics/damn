@@ -1,3 +1,6 @@
+import boto3
+import botocore
+from botocore.exceptions import ClientError
 import click
 import datetime
 import json
@@ -6,11 +9,9 @@ from termcolor import colored
 
 from .utils import load_config 
 
-@click.command()
-@click.argument('asset', type=str)
-@click.option('--profile', default='prod', help='Profile to use')
-def metrics(asset, profile):
-    """List your asset's metrics"""
+
+def get_dagster_metrics(asset, profile):
+    # Getting and processing Dagster metrics...
     # Get connector configs
     dagster_config = load_config('dagster', profile)
 
@@ -66,6 +67,15 @@ def metrics(asset, profile):
     
     data = response.json()
 
+    run_id = 'Not available'
+    status = 'Not available'
+    start_time = 'Not available'
+    end_time = 'Not available'
+    elapsed_time = 'Not available'
+    num_partitions = 'Not available'
+    num_materialized = 'Not available'
+    num_failed = 'Not available'
+
     if data["data"]["assetOrError"]["__typename"] == "AssetNotFoundError":
         click.echo(f"Error: {data['data']['assetOrError']['message']}")
     else:
@@ -82,28 +92,15 @@ def metrics(asset, profile):
             
             if 'startTime' in step_stats:
                 start_time = datetime.datetime.fromtimestamp(step_stats['startTime']).strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                start_time = 'Not available'
 
             if 'endTime' in step_stats:
                 end_time = datetime.datetime.fromtimestamp(step_stats['endTime']).strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                end_time = 'Not available'
 
             # Calculate and format elapsed time
             if 'startTime' in step_stats and 'endTime' in step_stats:
                 elapsed_seconds = step_stats['endTime'] - step_stats['startTime']
                 elapsed_time = str(datetime.timedelta(seconds=elapsed_seconds))
-            else:
-                elapsed_time = 'Not available'
-                
-        else:
-            run_id = 'Not available'
-            status = 'Not available'
-            start_time = 'Not available'
-            end_time = 'Not available'
-            elapsed_time = 'Not available'
-        
+                        
         # Get Definition attributes
         if asset_info['definition']:
             definition = asset_info['definition']
@@ -113,29 +110,71 @@ def metrics(asset, profile):
                 num_partitions = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else 'Not available'
                 num_materialized = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else 'Not available'
                 num_failed = partition_stats['numFailed'] if 'numFailed' in partition_stats else 'Not available'
-            else:
-                num_partitions = 'Not available'
-                num_materialized = 'Not available'
-                num_failed = 'Not available'
+
+    return {
+        'run_id': run_id,
+        'status': status,
+        'start_time': start_time,
+        'end_time': end_time,
+        'elapsed_time': elapsed_time,
+        'num_partitions': num_partitions,
+        'num_materialized': num_materialized,
+        'num_failed': num_failed
+    }
+
+
+def get_io_manager_metrics(asset, io_manager):
+    io_manager_config = load_config('io-manager', io_manager)
+
+    # Configure boto to use your credentials
+    boto3.setup_default_session(aws_access_key_id=io_manager_config['credentials']['access_key_id'], 
+                                aws_secret_access_key=io_manager_config['credentials']['secret_access_key'])
+
+    # Get file size
+    s3 = boto3.client('s3')
+    try:
+        metadata = s3.head_object(Bucket=io_manager_config['bucket_name'], Key=io_manager_config['key_prefix'] + '/' + asset)
+        size = metadata['ContentLength']
+    except ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            size = "N/A"
         else:
-            num_partitions = 'Not available'
-            num_materialized = 'Not available'
-            num_failed = 'Not available'
+            raise
 
-        click.echo('\n')
+    return {
+        'size': size
+    }
 
-        click.echo(colored("Latest Dagster materialization metrics:", 'magenta'))
-        click.echo(colored(f"- Latest run ID: ", 'yellow') + colored(f"{run_id}", 'green'))
-        click.echo(colored(f"- Status: ", 'yellow') + colored(f"{status}", 'green'))
-        click.echo(colored(f"- Start time: ", 'yellow') + colored(f"{start_time}", 'green'))
-        click.echo(colored(f"- End time: ", 'yellow') + colored(f"{end_time}", 'green'))
-        click.echo(colored(f"- Elapsed time: ", 'yellow') + colored(f"{elapsed_time}", 'green'))
 
-        click.echo('\n')
+def display_metrics(dagster_metrics, io_manager_metrics):
+    click.echo('\n')
 
-        click.echo(colored("Dagster partitions:", 'magenta'))
-        click.echo(colored(f"- Number of partitions: ", 'yellow') + colored(f"{num_partitions}", 'green'))
-        click.echo(colored(f"- Materialized partitions: ", 'yellow') + colored(f"{num_materialized}", 'green'))
-        click.echo(colored(f"- Failed partitions: ", 'yellow') + colored(f"{num_failed}", 'green'))
+    click.echo(colored("Latest Dagster materialization metrics:", 'magenta'))
+    click.echo(colored(f"- Latest run ID: ", 'yellow') + colored(f"{dagster_metrics['run_id']}", 'green'))
+    click.echo(colored(f"- Status: ", 'yellow') + colored(f"{dagster_metrics['status']}", 'green'))
+    click.echo(colored(f"- Start time: ", 'yellow') + colored(f"{dagster_metrics['start_time']}", 'green'))
+    click.echo(colored(f"- End time: ", 'yellow') + colored(f"{dagster_metrics['end_time']}", 'green'))
+    click.echo(colored(f"- Elapsed time: ", 'yellow') + colored(f"{dagster_metrics['elapsed_time']}", 'green'))
 
-        click.echo('\n')
+    click.echo('\n')
+
+    click.echo(colored("Dagster partitions:", 'magenta'))
+    click.echo(colored(f"- Number of partitions: ", 'yellow') + colored(f"{dagster_metrics['num_partitions']}", 'green'))
+    click.echo(colored(f"- Materialized partitions: ", 'yellow') + colored(f"{dagster_metrics['num_materialized']}", 'green'))
+    click.echo(colored(f"- Failed partitions: ", 'yellow') + colored(f"{dagster_metrics['num_failed']}", 'green'))
+
+    click.echo('\n')
+
+    click.echo(colored("IO Manager:", 'magenta'))
+    click.echo(colored(f"- File size: ", 'yellow') + colored(f"{io_manager_metrics['size']} KB", 'green'))
+
+
+@click.command()
+@click.argument('asset', type=str)
+@click.option('--profile', default='prod', help='Profile to use')
+@click.option('--io_manager', default='aws', help='IO manager storage system to use')
+def metrics(asset, profile, io_manager):
+    """List your asset's metrics"""
+    dagster_metrics = get_dagster_metrics(asset, profile)
+    io_manager_metrics = get_io_manager_metrics(asset, io_manager)
+    display_metrics(dagster_metrics, io_manager_metrics)
