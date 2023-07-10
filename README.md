@@ -25,6 +25,8 @@ pip install damn-tool
 ## Connector Configuration
 The DAMN tool leverages various connectors to interact with different data systems. Configuring these connectors is done via a YAML file located at `~/.damn/connectors.yml`.
 
+[*See example configuration file here*](connectors.yml.REPLACE)
+
 ### YAML Configuration Structure
 The configuration file uses the following structure:
 
@@ -52,16 +54,27 @@ damn ls --profile dev
 
 ## Connectors
 ### Dagster
-This is for the moment the default and only connector supported by the DAMN tool. Here's an example configuration for a dagster connector with prod and dev profiles:
+This is currently the default connector supported by the DAMN tool. Here's an example configuration for a dagster connector with prod and dev profiles:
 
 ```yaml
 dagster:
   prod:
     endpoint: https://your-dagster-instance.com/prod/graphql
     api_token: your-api-token
-  dev:
-    endpoint: https://your-dagster-instance.com/dev/graphql
-    api_token: your-dev-api-token
+```
+
+### IO Manager
+Your assets can be stored in storage services. For now, we only support the AWS storage service. This can be configured like this.
+
+```yaml
+io-manager:
+  aws:
+    credentials:
+      access_key_id: "{{ env('AWS_ACCESS_KEY_ID') }}"
+      secret_access_key: "{{ env('AWS_SECRET_ACCESS_KEY') }}"
+      region: "us-east-1"
+    bucket_name: "discursus-io"
+    key_prefix: "platform"
 ```
 
 <br/><br/>
@@ -75,21 +88,28 @@ Here are some examples of how to use this CLI tool:
 foo@bar:~$ damn ls
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.1/resources/images/damn_ls.png" width="500px" />
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_ls.png" width="500px" />
 
 List all assets for a specifc key group
 ```bash
 foo@bar:~$ damn ls --prefix gdelt
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.1/resources/images/damn_ls_prefix.png" width="400px" />
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_ls_prefix.png" width="400px" />
 
 ### Show details for a specific asset
 ```bash
 foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.1/resources/images/damn_ls_asset.png" width="550px" />
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_ls_asset.png" width="550px" />
+
+### Show metrics for a specific asset
+```bash
+foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
+```
+
+<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_metrics.png" width="550px" />
 
 <br/><br/>
 

@@ -1,0 +1,13 @@
+dagster:
+  prod:
+    endpoint: https://discursus.dagster.cloud/prod/graphql
+    api_token: user:32c6f94cbebd4c9db8dd6bd429a9af0f
+
+io-manager:
+  aws:
+    credentials:
+      access_key_id: "{{ env('AWS_ACCESS_KEY_ID') }}"
+      secret_access_key: "{{ env('AWS_SECRET_ACCESS_KEY') }}"
+      region: "us-east-1"
+    bucket_name: "discursus-io"
+    key_prefix: "platform"
