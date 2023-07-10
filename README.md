@@ -73,8 +73,8 @@ io-manager:
       access_key_id: "{{ env('AWS_ACCESS_KEY_ID') }}"
       secret_access_key: "{{ env('AWS_SECRET_ACCESS_KEY') }}"
       region: "us-east-1"
-    bucket_name: "discursus-io"
-    key_prefix: "platform"
+    bucket_name: "bucket-name"
+    key_prefix: "asset-prefix"
 ```
 
 <br/><br/>
