@@ -83,6 +83,8 @@ io-manager:
 ## Usage
 Here are some examples of how to use this CLI tool:
 
+*Note that all commands come with the `--copy-output` option to copy the command's output to your clipboard instead of the terminal.*
+
 ### List assets
 ```bash
 foo@bar:~$ damn ls
