@@ -1,15 +1,13 @@
-import json
 import click
+import json
+import pyperclip
 import requests
 from termcolor import colored
 
-from .utils import load_config 
+from .utils import load_config, run_and_capture
 
-@click.command()
-@click.argument('asset', required=True)
-@click.option('--profile', default='prod', help='Profile to use')
-def show(asset, profile):
-    """Show details for a specific asset"""
+
+def get_dagster_asset_info(asset, profile):
     # Get connector configs
     dagster_config = load_config('dagster', profile)
 
@@ -22,7 +20,7 @@ def show(asset, profile):
     # Split the asset key into a list of strings
     asset_key = asset.split("/")
 
-    # Insert asset_key directly into the query using f-string formatting
+    # Get data
     query = f"""
     query AssetByKey {{
       assetOrError(assetKey: {{path: {json.dumps(asset_key)}}}) {{
@@ -135,10 +133,10 @@ def show(asset, profile):
     
     response.raise_for_status()
     
-    data = response.json()
+    return response.json()
 
-    click.echo('\n')
-    # Check if an error occurred and print the error message or asset details
+
+def display_asset_info(asset, data):
     if data["data"]["assetOrError"]["__typename"] == "AssetNotFoundError":
         click.echo(f"Error: {data['data']['assetOrError']['message']}")
     else:
@@ -181,12 +179,12 @@ def show(asset, profile):
             click.echo("- None")
         
         # Handle 'assetMaterializations'
+        click.echo(colored("\nLatest materialization's metadata entries:", 'magenta'))
         asset_materializations = asset_info.get('assetMaterializations', [])
         if asset_materializations:
             # Get the most recent materialization (it should be the first since we limited it to 1)
             last_materialization = asset_materializations[0]
 
-            click.echo(colored("\nLatest materialization's metadata entries:", 'magenta'))
             timestamp = last_materialization.get('timestamp', 'Not available')
             click.echo(colored(f"- Last materialization timestamp: ", 'yellow') + colored(f"{timestamp}", 'green'))
             
@@ -227,7 +225,22 @@ def show(asset, profile):
 
                     click.echo(colored(f"- {label}: ", 'yellow') + colored(f"{value}", 'green'))
             else:
-                click.echo("No metadata entries.")
+                click.echo(colored(f"- No metadata entries.", 'yellow'))
         else:
-            click.echo("No asset materializations.")
-    click.echo('\n')
+            click.echo(colored(f"- No asset materializations.", 'yellow'))
+
+
+@click.command()
+@click.argument('asset', required=True)
+@click.option('--profile', default='prod', help='Profile to use')
+@click.option('--copy-output', is_flag=True, help='Copy command output to clipboard')
+def show(asset, profile, copy_output):
+    """Show details for a specific asset"""
+    data = get_dagster_asset_info(asset, profile)
+
+    if copy_output:
+        output = run_and_capture(display_asset_info, asset, data)
+        markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
+        pyperclip.copy(markdown_output)
+    else:
+        display_asset_info(asset, data)
