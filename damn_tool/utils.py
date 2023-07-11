@@ -1,5 +1,7 @@
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+import io
 import os
+import sys
 import yaml
 
 def load_config(connector, profile):
@@ -18,3 +20,19 @@ def load_config(connector, profile):
         return config[connector][profile]
     except KeyError:
         raise ValueError(f"No configuration found for connector '{connector}' with profile '{profile}'")
+
+
+def run_and_capture(func, *args, **kwargs):
+    # Create a string buffer and redirect stdout to it
+    buffer = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = buffer
+
+    # Run the function and capture its output
+    try:
+        func(*args, **kwargs)
+    finally:
+        # Ensure the original stdout is restored even if the function raises an exception
+        sys.stdout = old_stdout
+
+    return buffer.getvalue()

@@ -1,15 +1,13 @@
-import json
 import click
+import json
+import pyperclip
 import requests
 from termcolor import colored
 
-from .utils import load_config 
+from .utils import load_config, run_and_capture
 
-@click.command()
-@click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-@click.option('--profile', default='prod', help='Profile to use')
-def ls(prefix, profile):
-    """List your platform's data assets"""
+
+def get_dagster_assets(prefix, profile):
     # Get connector configs
     dagster_config = load_config('dagster', profile)
 
@@ -19,6 +17,7 @@ def ls(prefix, profile):
         "Dagster-Cloud-Api-Token": dagster_config['api_token'],
     }
 
+    # Get data
     if prefix:
       prefix_list = prefix.split('/')
       query = f"""
@@ -57,11 +56,27 @@ def ls(prefix, profile):
     
     response.raise_for_status()
     
-    data = response.json()
+    return response.json()
 
+
+def display_assets(data):
     # Extract asset keys and print them
-    click.echo('\n')
     for node in data['data']['assetsOrError']['nodes']:
         asset_key = "/".join(node['key']['path'])
         click.echo(colored(f'- {asset_key}', 'cyan'))
-    click.echo('\n')
+
+
+@click.command()
+@click.option('--prefix', default=None, help='Get list of assets with a given prefix')
+@click.option('--profile', default='prod', help='Profile to use')
+@click.option('--copy-output', is_flag=True, help='Copy command output to clipboard')
+def ls(prefix, profile, copy_output):
+    """List your platform's data assets"""
+    data = get_dagster_assets(prefix, profile)
+
+    if copy_output:
+        output = run_and_capture(display_assets, data)
+        markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
+        pyperclip.copy(markdown_output)
+    else:
+        display_assets(data)

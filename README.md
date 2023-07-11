@@ -83,33 +83,93 @@ io-manager:
 ## Usage
 Here are some examples of how to use this CLI tool:
 
+*Note that all commands come with the `--copy-output` option to copy the command's output to your clipboard instead of the terminal.*
+
 ### List assets
 ```bash
 foo@bar:~$ damn ls
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_ls.png" width="500px" />
+```
+- airbyte/protest_groupings
+- data_warehouse/movements_dim
+- data_warehouse/observations_fct
+- gdelt/gdelt_gkg_articles
+- gdelt/gdelt_mention_summaries
+- hex/hex_main_dashboard_refresh
+- semantic_definitions
+```
 
 List all assets for a specifc key group
 ```bash
 foo@bar:~$ damn ls --prefix gdelt
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_ls_prefix.png" width="400px" />
+```
+- gdelt/gdelt_article_summaries
+- gdelt/gdelt_articles_enhanced
+- gdelt/gdelt_events
+- gdelt/gdelt_gkg_articles
+- gdelt/gdelt_mention_summaries
+- gdelt/gdelt_mentions
+- gdelt/gdelt_mentions_enhanced
+```
 
 ### Show details for a specific asset
 ```bash
 foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_ls_asset.png" width="550px" />
+```
+Asset attributes:
+- Key: gdelt/gdelt_gkg_articles
+- Description: List of gkg articles mined on GDELT
+- Compute kind: None
+- Is partitioned: True
+- Auto-materialization policy: EAGER
+- Freshess policy (maximum lag minutes): Not available
+- Freshess policy (cron schedule): Not available
+
+Upstream assets:
+- None
+
+Downstream assets:
+- data_warehouse/staging/stg__gdelt__articles
+- gdelt/gdelt_articles_enhanced
+
+Latest materialization's metadata entries:
+- Last materialization timestamp: 1689093222451
+- s3_path: s3://discursus-io/sources/gdelt/20230711/20230711161500.articles.csv
+- rows: 13
+- min_gdelt_gkg_article_id: 20230711161500-1968
+- max_gdelt_gkg_article_id: 20230711161500-T589
+- path: platform/gdelt/gdelt_gkg_articles/20230711161500
+- uri: s3://discursus-io/platform/gdelt/gdelt_gkg_articles
+```
 
 ### Show metrics for a specific asset
 ```bash
 foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 ```
 
-<img src="https://raw.githubusercontent.com/discursus-data/damn/release/0.2/resources/images/damn_metrics.png" width="550px" />
+```
+Latest Dagster materialization metrics:
+- Latest run ID: 84ce1791-455b-496b-b1c0-99daef23546b
+- Status: SUCCESS
+- Start time: 2023-07-11 12:33:35
+- End time: 2023-07-11 12:33:42
+- Elapsed time: 0:00:06.709402
+
+
+Dagster partitions:
+- Number of partitions: 4188
+- Materialized partitions: 4188
+- Failed partitions: 0
+
+
+IO Manager:
+- File size: 461657 KB
+```
 
 <br/><br/>
 

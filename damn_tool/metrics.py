@@ -1,13 +1,13 @@
 import boto3
-import botocore
 from botocore.exceptions import ClientError
 import click
 import datetime
 import json
+import pyperclip
 import requests
 from termcolor import colored
 
-from .utils import load_config 
+from .utils import load_config, run_and_capture
 
 
 def get_dagster_metrics(asset, profile):
@@ -76,40 +76,37 @@ def get_dagster_metrics(asset, profile):
     num_materialized = 'Not available'
     num_failed = 'Not available'
 
-    if data["data"]["assetOrError"]["__typename"] == "AssetNotFoundError":
-        click.echo(f"Error: {data['data']['assetOrError']['message']}")
-    else:
-        asset_info = data["data"]["assetOrError"]
-    
-        # Get AssetMaterializations attributes
-        if asset_info['assetMaterializations']:
-            first_materialization = asset_info['assetMaterializations'][0]
-            run_id = first_materialization['runId'] if 'runId' in first_materialization else 'Not available'
+    asset_info = data["data"]["assetOrError"]
 
-            # Extract stepStats if available
-            step_stats = first_materialization['stepStats'] if 'stepStats' in first_materialization else {}
-            status = step_stats['status'] if 'status' in step_stats else 'Not available'
-            
-            if 'startTime' in step_stats:
-                start_time = datetime.datetime.fromtimestamp(step_stats['startTime']).strftime('%Y-%m-%d %H:%M:%S')
+    # Get AssetMaterializations attributes
+    if asset_info['assetMaterializations']:
+        first_materialization = asset_info['assetMaterializations'][0]
+        run_id = first_materialization['runId'] if 'runId' in first_materialization else 'Not available'
 
-            if 'endTime' in step_stats:
-                end_time = datetime.datetime.fromtimestamp(step_stats['endTime']).strftime('%Y-%m-%d %H:%M:%S')
+        # Extract stepStats if available
+        step_stats = first_materialization['stepStats'] if 'stepStats' in first_materialization else {}
+        status = step_stats['status'] if 'status' in step_stats else 'Not available'
+        
+        if 'startTime' in step_stats:
+            start_time = datetime.datetime.fromtimestamp(step_stats['startTime']).strftime('%Y-%m-%d %H:%M:%S')
 
-            # Calculate and format elapsed time
-            if 'startTime' in step_stats and 'endTime' in step_stats:
-                elapsed_seconds = step_stats['endTime'] - step_stats['startTime']
-                elapsed_time = str(datetime.timedelta(seconds=elapsed_seconds))
-                        
-        # Get Definition attributes
-        if asset_info['definition']:
-            definition = asset_info['definition']
-            
-            if 'partitionStats' in definition and definition['partitionStats'] is not None:
-                partition_stats = definition['partitionStats']
-                num_partitions = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else 'Not available'
-                num_materialized = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else 'Not available'
-                num_failed = partition_stats['numFailed'] if 'numFailed' in partition_stats else 'Not available'
+        if 'endTime' in step_stats:
+            end_time = datetime.datetime.fromtimestamp(step_stats['endTime']).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Calculate and format elapsed time
+        if 'startTime' in step_stats and 'endTime' in step_stats:
+            elapsed_seconds = step_stats['endTime'] - step_stats['startTime']
+            elapsed_time = str(datetime.timedelta(seconds=elapsed_seconds))
+                    
+    # Get Definition attributes
+    if asset_info['definition']:
+        definition = asset_info['definition']
+        
+        if 'partitionStats' in definition and definition['partitionStats'] is not None:
+            partition_stats = definition['partitionStats']
+            num_partitions = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else 'Not available'
+            num_materialized = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else 'Not available'
+            num_failed = partition_stats['numFailed'] if 'numFailed' in partition_stats else 'Not available'
 
     return {
         'run_id': run_id,
@@ -147,8 +144,6 @@ def get_io_manager_metrics(asset, io_manager):
 
 
 def display_metrics(dagster_metrics, io_manager_metrics):
-    click.echo('\n')
-
     click.echo(colored("Latest Dagster materialization metrics:", 'magenta'))
     click.echo(colored(f"- Latest run ID: ", 'yellow') + colored(f"{dagster_metrics['run_id']}", 'green'))
     click.echo(colored(f"- Status: ", 'yellow') + colored(f"{dagster_metrics['status']}", 'green'))
@@ -173,8 +168,15 @@ def display_metrics(dagster_metrics, io_manager_metrics):
 @click.argument('asset', type=str)
 @click.option('--profile', default='prod', help='Profile to use')
 @click.option('--io_manager', default='aws', help='IO manager storage system to use')
-def metrics(asset, profile, io_manager):
+@click.option('--copy-output', is_flag=True, help='Copy command output to clipboard')
+def metrics(asset, profile, io_manager, copy_output):
     """List your asset's metrics"""
     dagster_metrics = get_dagster_metrics(asset, profile)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
-    display_metrics(dagster_metrics, io_manager_metrics)
+
+    if copy_output:
+        output = run_and_capture(display_metrics, dagster_metrics, io_manager_metrics)
+        markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
+        pyperclip.copy(markdown_output)
+    else:
+        display_metrics(dagster_metrics, io_manager_metrics)
