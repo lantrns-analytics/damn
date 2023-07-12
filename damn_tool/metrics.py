@@ -7,7 +7,7 @@ import pyperclip
 import requests
 from termcolor import colored
 
-from .utils.damn import load_config, run_and_capture
+from .utils.helpers import load_config, run_and_capture, format_size
 from .utils.aws import list_objects_and_folders
 
 
@@ -131,7 +131,7 @@ def get_io_manager_metrics(asset, io_manager):
     s3 = boto3.client('s3')
 
     # Get S3 items with that asset name
-    s3_items = list_objects_and_folders(io_manager_config['bucket_name'], io_manager_config['key_prefix'] + "/" + "gdelt/gdelt_gkg_articles")
+    s3_items = list_objects_and_folders(io_manager_config['bucket_name'], io_manager_config['key_prefix'] + "/" + asset)
     
     return {
         'files': s3_items[0]['num_files'],
@@ -159,7 +159,7 @@ def display_metrics(dagster_metrics, io_manager_metrics):
 
     click.echo(colored("IO Manager:", 'magenta'))
     click.echo(colored(f"- Files: ", 'yellow') + colored(f"{io_manager_metrics['files']}", 'green'))
-    click.echo(colored(f"- File(s) size: ", 'yellow') + colored(f"{io_manager_metrics['size']} KB", 'green'))
+    click.echo(colored(f"- File(s) size: ", 'yellow') + colored(format_size(io_manager_metrics['size']), 'green'))
     click.echo(colored(f"- Last modified: ", 'yellow') + colored(f"{io_manager_metrics['last_modified']}", 'green'))
 
 

@@ -4,7 +4,7 @@ import pyperclip
 import requests
 from termcolor import colored
 
-from .utils.damn import load_config, run_and_capture
+from .utils.helpers import load_config, run_and_capture
 
 
 def get_dagster_assets(prefix, profile):
