@@ -7,6 +7,27 @@
     ███   ▄███   ███    ███ ███   ███   ███ ███   ███ 
     ████████▀    ███    █▀   ▀█   ███   █▀   ▀█   █▀                                                 
 
+
+<br/><br/>
+<p align="center">
+    <a href="https://github.com/discursus-data/damn/releases">
+        <img src="https://img.shields.io/github/release/discursus-data/damn" alt="Latest release" />
+    </a>
+    <a href="https://github.com/discursus-data/damn/network/members">
+        <img src="https://img.shields.io/github/forks/discursus-data/damn" alt="Forks" />
+    </a>
+    <a href="https://github.com/discursus-data/damn/stargazers">
+        <img src="https://img.shields.io/github/stars/discursus-data/damn" alt="Stars" />
+    </a>
+    <a href="https://github.com/discursus-data/damn/issues">
+        <img src="https://img.shields.io/github/issues/discursus-data/damn" alt="Open issues" />
+    </a>
+    <a href="https://github.com/discursus-data/damn/contributors/">
+        <img src="https://img.shields.io/github/contributors/discursus-data/damn" alt="Contributors" />
+    </a>
+</p>
+<br/><br/>
+
 # Data Asset Metrics Navigator
 The DAMN tool extracts and reports metrics about your data assets.
 
