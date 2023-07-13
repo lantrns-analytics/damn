@@ -154,21 +154,23 @@ foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 
 ```
 Latest Dagster materialization metrics:
-- Latest run ID: 84ce1791-455b-496b-b1c0-99daef23546b
+- Latest run ID: ee9d7c67-cf31-411b-96e8-038db0252ef1
 - Status: SUCCESS
-- Start time: 2023-07-11 12:33:35
-- End time: 2023-07-11 12:33:42
-- Elapsed time: 0:00:06.709402
+- Start time: 2023-07-13 09:33:18
+- End time: 2023-07-13 09:33:20
+- Elapsed time: 0:00:02.623300
 
 
 Dagster partitions:
-- Number of partitions: 4188
-- Materialized partitions: 4188
+- Number of partitions: 4368
+- Materialized partitions: 4368
 - Failed partitions: 0
 
 
 IO Manager:
-- File size: 461657 KB
+- Files: 4381
+- File(s) size: 63.72 MB
+- Last modified: 2023-07-13 13:33:21+00:00
 ```
 
 <br/><br/>
