@@ -7,7 +7,8 @@ import pyperclip
 import requests
 from termcolor import colored
 
-from .utils import load_config, run_and_capture
+from .utils.helpers import load_config, run_and_capture, format_size
+from .utils.aws import list_objects_and_folders
 
 
 def get_dagster_metrics(asset, profile):
@@ -67,25 +68,25 @@ def get_dagster_metrics(asset, profile):
     
     data = response.json()
 
-    run_id = 'Not available'
-    status = 'Not available'
-    start_time = 'Not available'
-    end_time = 'Not available'
-    elapsed_time = 'Not available'
-    num_partitions = 'Not available'
-    num_materialized = 'Not available'
-    num_failed = 'Not available'
+    run_id = 'N/A'
+    status = 'N/A'
+    start_time = 'N/A'
+    end_time = 'N/A'
+    elapsed_time = 'N/A'
+    num_partitions = 'N/A'
+    num_materialized = 'N/A'
+    num_failed = 'N/A'
 
     asset_info = data["data"]["assetOrError"]
 
     # Get AssetMaterializations attributes
     if asset_info['assetMaterializations']:
         first_materialization = asset_info['assetMaterializations'][0]
-        run_id = first_materialization['runId'] if 'runId' in first_materialization else 'Not available'
+        run_id = first_materialization['runId'] if 'runId' in first_materialization else 'N/A'
 
         # Extract stepStats if available
         step_stats = first_materialization['stepStats'] if 'stepStats' in first_materialization else {}
-        status = step_stats['status'] if 'status' in step_stats else 'Not available'
+        status = step_stats['status'] if 'status' in step_stats else 'N/A'
         
         if 'startTime' in step_stats:
             start_time = datetime.datetime.fromtimestamp(step_stats['startTime']).strftime('%Y-%m-%d %H:%M:%S')
@@ -104,9 +105,9 @@ def get_dagster_metrics(asset, profile):
         
         if 'partitionStats' in definition and definition['partitionStats'] is not None:
             partition_stats = definition['partitionStats']
-            num_partitions = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else 'Not available'
-            num_materialized = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else 'Not available'
-            num_failed = partition_stats['numFailed'] if 'numFailed' in partition_stats else 'Not available'
+            num_partitions = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else 'N/A'
+            num_materialized = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else 'N/A'
+            num_failed = partition_stats['numFailed'] if 'numFailed' in partition_stats else 'N/A'
 
     return {
         'run_id': run_id,
@@ -126,20 +127,16 @@ def get_io_manager_metrics(asset, io_manager):
     # Configure boto to use your credentials
     boto3.setup_default_session(aws_access_key_id=io_manager_config['credentials']['access_key_id'], 
                                 aws_secret_access_key=io_manager_config['credentials']['secret_access_key'])
-
-    # Get file size
+    
     s3 = boto3.client('s3')
-    try:
-        metadata = s3.head_object(Bucket=io_manager_config['bucket_name'], Key=io_manager_config['key_prefix'] + '/' + asset)
-        size = metadata['ContentLength']
-    except ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            size = "N/A"
-        else:
-            raise
 
+    # Get S3 items with that asset name
+    s3_items = list_objects_and_folders(io_manager_config['bucket_name'], io_manager_config['key_prefix'] + "/" + asset)
+    
     return {
-        'size': size
+        'files': s3_items[0]['num_files'],
+        'size': s3_items[0]['file_size'],
+        'last_modified': s3_items[0]['last_modified_ts']
     }
 
 
@@ -161,7 +158,9 @@ def display_metrics(dagster_metrics, io_manager_metrics):
     click.echo('\n')
 
     click.echo(colored("IO Manager:", 'magenta'))
-    click.echo(colored(f"- File size: ", 'yellow') + colored(f"{io_manager_metrics['size']} KB", 'green'))
+    click.echo(colored(f"- Files: ", 'yellow') + colored(f"{io_manager_metrics['files']}", 'green'))
+    click.echo(colored(f"- File(s) size: ", 'yellow') + colored(format_size(io_manager_metrics['size']), 'green'))
+    click.echo(colored(f"- Last modified: ", 'yellow') + colored(f"{io_manager_metrics['last_modified']}", 'green'))
 
 
 @click.command()

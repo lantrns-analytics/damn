@@ -36,3 +36,13 @@ def run_and_capture(func, *args, **kwargs):
         sys.stdout = old_stdout
 
     return buffer.getvalue()
+
+
+def format_size(size):
+    # size is in bytes
+    units = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+    unit = 0
+    while size >= 1024 and unit < len(units)-1:
+        size /= 1024
+        unit += 1
+    return f"{size:.2f} {units[unit]}"
