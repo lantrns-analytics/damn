@@ -5,8 +5,9 @@ Fixes # (issue)
 # Type of change
 
 - [ ] New feature (adds functionality)
+- [ ] Improvements (improves existing functionality)
 - [ ] Bug fix (fixes an issue)
-- [ ] Infrastructure (provides the necessary resources for platform to run)
+- [ ] Tech debt (Under the hood improvements)
 
 # Checklist:
 
