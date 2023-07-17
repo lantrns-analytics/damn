@@ -91,13 +91,28 @@ io-manager:
     key_prefix: "asset-prefix"
 ```
 
+#### Data Warehouses
+Your assets can be materialized to a data warehouse. For now, we only support Snowflake. This can be configured like this.
+
+```yaml
+data-warehouse:
+  snowflake:
+    account:   ab1234.us-east-1
+    user:      username
+    password:  "{{ env('SNOWFLAKE_PASSWORD') }}"
+    role:      my-role
+    database:  my-database
+    warehouse: my-warehouse
+    schema_prefix:    analytics
+```
+
 ### Switching Between Profiles
 The active profile for each connector can be changed by specifying the profile when running damn commands. By default, damn will use the first profile configured for each connector.
 
 Example usage:
 
 ```bash
-damn ls --profile dagster
+damn ls --orchestrator dagster --io-manager aws --data-warehouse snowflake
 ```
 
 <br/><br/>

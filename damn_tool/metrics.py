@@ -4,6 +4,7 @@ import datetime
 import json
 import pyperclip
 import requests
+import snowflake.connector
 
 from .utils.aws import list_objects_and_folders
 from .utils.helpers import (
@@ -14,10 +15,10 @@ from .utils.helpers import (
 )
 
 
-def get_orchestrator_metrics(asset, profile):
+def get_orchestrator_metrics(asset, orchestrator):
     # Getting and processing orchestrator metrics...
     # Get connector configs
-    orchestrator_config = load_config('orchestrator', profile)
+    orchestrator_config = load_config('orchestrator', orchestrator)
 
     # Set headers
     headers = {
@@ -150,14 +151,21 @@ def get_io_manager_metrics(asset, io_manager):
         }
 
 
+def get_dw_metrics(asset, data_warehouse):
+    data_warehouse_config = load_config('data-warehouse', data_warehouse)
+
+    return None
+
+
 @click.command()
 @click.argument('asset', type=str)
-@click.option('--profile', default=None, help='Profile to use')
-@click.option('--io_manager', default='aws', help='IO manager storage system to use')
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default='aws', help='IO manager service provider to use')
+@click.option('--data-warehouse', default='aws', help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(asset, profile, io_manager, output):
+def metrics(asset, orchestrator, io_manager, data_warehouse, output):
     """List your asset's metrics"""
-    orchestrator_metrics = get_orchestrator_metrics(asset, profile)
+    orchestrator_metrics = get_orchestrator_metrics(asset, orchestrator)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
 
     data = {

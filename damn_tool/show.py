@@ -11,9 +11,9 @@ from .utils.helpers import (
 )
 
 
-def get_orchestrator_asset_info(asset, profile):
+def get_orchestrator_asset_info(asset, orchestrator):
     # Get connector configs
-    orchestrator_config = load_config('orchestrator', profile)
+    orchestrator_config = load_config('orchestrator', orchestrator)
 
     # Set headers
     headers = {
@@ -142,11 +142,11 @@ def get_orchestrator_asset_info(asset, profile):
 
 @click.command()
 @click.argument('asset', required=True)
-@click.option('--profile', default=None, help='Profile to use')
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def show(asset, profile, output):
+def show(asset, orchestrator, output):
     """Show details for a specific asset"""
-    data = get_orchestrator_asset_info(asset, profile)
+    data = get_orchestrator_asset_info(asset, orchestrator)
     packaged_command_output = package_command_output('show', data)
 
     if output == 'json':
