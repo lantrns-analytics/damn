@@ -11,15 +11,15 @@ from .utils.helpers import load_config, run_and_capture, format_size
 from .utils.aws import list_objects_and_folders
 
 
-def get_dagster_metrics(asset, profile):
-    # Getting and processing Dagster metrics...
+def get_orchestrator_metrics(asset, profile):
+    # Getting and processing orchestrator metrics...
     # Get connector configs
-    dagster_config = load_config('dagster', profile)
+    orchestrator_config = load_config('orchestrator', profile)
 
     # Set headers
     headers = {
         "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": dagster_config['api_token'],
+        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
     }
 
     asset_list = asset.split('/')
@@ -59,7 +59,7 @@ def get_dagster_metrics(asset, profile):
     """
 
     response = requests.post(
-        dagster_config['endpoint'], # type: ignore
+        orchestrator_config['endpoint'], # type: ignore
         headers=headers, # type: ignore
         json={"query": query}
     )
@@ -140,20 +140,20 @@ def get_io_manager_metrics(asset, io_manager):
     }
 
 
-def display_metrics(dagster_metrics, io_manager_metrics):
-    click.echo(colored("Latest Dagster materialization metrics:", 'magenta'))
-    click.echo(colored(f"- Latest run ID: ", 'yellow') + colored(f"{dagster_metrics['run_id']}", 'green'))
-    click.echo(colored(f"- Status: ", 'yellow') + colored(f"{dagster_metrics['status']}", 'green'))
-    click.echo(colored(f"- Start time: ", 'yellow') + colored(f"{dagster_metrics['start_time']}", 'green'))
-    click.echo(colored(f"- End time: ", 'yellow') + colored(f"{dagster_metrics['end_time']}", 'green'))
-    click.echo(colored(f"- Elapsed time: ", 'yellow') + colored(f"{dagster_metrics['elapsed_time']}", 'green'))
+def display_metrics(orchestrator_metrics, io_manager_metrics):
+    click.echo(colored("Latest Orchestrator materialization metrics:", 'magenta'))
+    click.echo(colored(f"- Latest run ID: ", 'yellow') + colored(f"{orchestrator_metrics['run_id']}", 'green'))
+    click.echo(colored(f"- Status: ", 'yellow') + colored(f"{orchestrator_metrics['status']}", 'green'))
+    click.echo(colored(f"- Start time: ", 'yellow') + colored(f"{orchestrator_metrics['start_time']}", 'green'))
+    click.echo(colored(f"- End time: ", 'yellow') + colored(f"{orchestrator_metrics['end_time']}", 'green'))
+    click.echo(colored(f"- Elapsed time: ", 'yellow') + colored(f"{orchestrator_metrics['elapsed_time']}", 'green'))
 
     click.echo('\n')
 
-    click.echo(colored("Dagster partitions:", 'magenta'))
-    click.echo(colored(f"- Number of partitions: ", 'yellow') + colored(f"{dagster_metrics['num_partitions']}", 'green'))
-    click.echo(colored(f"- Materialized partitions: ", 'yellow') + colored(f"{dagster_metrics['num_materialized']}", 'green'))
-    click.echo(colored(f"- Failed partitions: ", 'yellow') + colored(f"{dagster_metrics['num_failed']}", 'green'))
+    click.echo(colored("Orchestrator partitions:", 'magenta'))
+    click.echo(colored(f"- Number of partitions: ", 'yellow') + colored(f"{orchestrator_metrics['num_partitions']}", 'green'))
+    click.echo(colored(f"- Materialized partitions: ", 'yellow') + colored(f"{orchestrator_metrics['num_materialized']}", 'green'))
+    click.echo(colored(f"- Failed partitions: ", 'yellow') + colored(f"{orchestrator_metrics['num_failed']}", 'green'))
 
     click.echo('\n')
 
@@ -165,17 +165,17 @@ def display_metrics(dagster_metrics, io_manager_metrics):
 
 @click.command()
 @click.argument('asset', type=str)
-@click.option('--profile', default='prod', help='Profile to use')
+@click.option('--profile', default=None, help='Profile to use')
 @click.option('--io_manager', default='aws', help='IO manager storage system to use')
 @click.option('--copy-output', is_flag=True, help='Copy command output to clipboard')
 def metrics(asset, profile, io_manager, copy_output):
     """List your asset's metrics"""
-    dagster_metrics = get_dagster_metrics(asset, profile)
+    orchestrator_metrics = get_orchestrator_metrics(asset, profile)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
 
     if copy_output:
-        output = run_and_capture(display_metrics, dagster_metrics, io_manager_metrics)
+        output = run_and_capture(display_metrics, orchestrator_metrics, io_manager_metrics)
         markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
         pyperclip.copy(markdown_output)
     else:
-        display_metrics(dagster_metrics, io_manager_metrics)
+        display_metrics(orchestrator_metrics, io_manager_metrics)

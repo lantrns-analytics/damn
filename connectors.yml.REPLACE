@@ -1,5 +1,5 @@
-dagster:
-  prod:
+orchestrator:
+  dagster:
     endpoint: https://ACCOUNT.dagster.cloud/prod/graphql
     api_token: user:123ABC
 
