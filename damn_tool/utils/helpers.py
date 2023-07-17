@@ -1,8 +1,10 @@
+import click
 import io
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
 import os
 import sys
+from termcolor import colored
 import yaml
 
 def load_config(connector, profile):
@@ -27,7 +29,7 @@ def load_config(connector, profile):
         raise ValueError(f"No configuration found for connector '{connector}' with profile '{profile}'")
 
 
-def package_display_items(command, data):
+def package_command_output(command, data):
     packaged_display_items = {}
     
     if command == 'ls':
@@ -39,6 +41,17 @@ def package_display_items(command, data):
         packaged_display_items['ls'] = ls_items
 
     return json.dumps(packaged_display_items)
+
+
+def print_packaged_command_output(packaged_display_items):
+    # Load the JSON string to a dict if it's a string
+    if isinstance(packaged_display_items, str):
+        packaged_display_items = json.loads(packaged_display_items)
+        
+    # Extract asset keys and print them
+    if 'ls' in packaged_display_items:
+        for asset_key in packaged_display_items['ls']:
+            click.echo(colored(f'- {asset_key}', 'cyan'))
 
 
 def run_and_capture(func, *args, **kwargs):
