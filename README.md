@@ -97,13 +97,13 @@ Your assets can be materialized to a data warehouse. For now, we only support Sn
 ```yaml
 data-warehouse:
   snowflake:
-    account:   ab1234.us-east-1
-    user:      username
-    password:  "{{ env('SNOWFLAKE_PASSWORD') }}"
-    role:      my-role
-    database:  my-database
+    account: ab1234.us-east-1
+    user: username
+    password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+    role: my-role
+    database: my-database
     warehouse: my-warehouse
-    schema_prefix:    analytics
+    schema: analytics
 ```
 
 ### Switching Between Profiles

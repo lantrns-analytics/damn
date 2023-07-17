@@ -124,7 +124,8 @@ def package_command_output(command, data):
 
         metrics_info = {
             "Latest Orchestrator materialization metrics": data['Orchestrator Metrics'],
-            "IO Manager": data['IO Manager Metrics']
+            "IO Manager": data['IO Manager Metrics'],
+            "Data Warehouse": data['Data Warehouse Metrics']
         }
         packaged_command_output = {command: metrics_info}
 

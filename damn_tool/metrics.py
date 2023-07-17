@@ -151,26 +151,73 @@ def get_io_manager_metrics(asset, io_manager):
         }
 
 
-def get_dw_metrics(asset, data_warehouse):
+def get_data_warehouse_metrics(asset, data_warehouse):
     data_warehouse_config = load_config('data-warehouse', data_warehouse)
 
-    return None
+    sql = """select
+        lower(table_schema) as table_schema,
+        lower(table_type) as table_type,
+        row_count,
+        bytes,
+        created,
+        last_altered
+        
+    from information_schema.tables 
+    where lower(table_name) = 'movements_dim'
+    and lower(table_schema) like '%analytics%'
+    """
+
+    conn = snowflake.connector.connect(
+        user=data_warehouse_config['user'],
+        password=data_warehouse_config['password'],
+        account=data_warehouse_config['account'],
+        warehouse=data_warehouse_config['warehouse'],
+        database=data_warehouse_config['database'],
+        schema=data_warehouse_config['schema']
+    )
+    cur = conn.cursor()
+
+    try:
+        # Running queries
+        cur.execute(sql)
+        result = cur.fetchone()  # Fetch the first row of the result
+        if result is not None:
+            result_dict = dict(zip([column[0] for column in cur.description], result))
+            return {
+                'row_count': result_dict.get('ROW_COUNT', None)
+            }
+        else:
+            return {
+                'row_count': None
+            }
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+        
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 
 @click.command()
 @click.argument('asset', type=str)
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
-@click.option('--io_manager', default='aws', help='IO manager service provider to use')
-@click.option('--data-warehouse', default='aws', help='Data warehouse service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
 def metrics(asset, orchestrator, io_manager, data_warehouse, output):
     """List your asset's metrics"""
     orchestrator_metrics = get_orchestrator_metrics(asset, orchestrator)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
+    data_warehouse_metrics = get_data_warehouse_metrics(asset, data_warehouse)
 
     data = {
         "Orchestrator Metrics": orchestrator_metrics,
-        "IO Manager Metrics": io_manager_metrics
+        "IO Manager Metrics": io_manager_metrics,
+        "Data Warehouse Metrics": data_warehouse_metrics
     }
 
     packaged_command_output = package_command_output('metrics', data)
