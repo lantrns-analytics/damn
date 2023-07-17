@@ -54,7 +54,6 @@ def package_command_output(command, data):
             freshness_policy_cron = 'Not available'
 
         show_info["Asset attributes"] = {
-            "Key": asset_info['definition'].get('key', 'Not available'),
             "Description": asset_info['definition'].get('description', 'Not available'),
             "Compute kind": asset_info['definition'].get('computeKind', 'Not available'),
             "Is partitioned": asset_info['definition'].get('isPartitioned', 'Not available'),

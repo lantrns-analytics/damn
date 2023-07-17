@@ -149,29 +149,23 @@ foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 
 ```
 Asset attributes:
-- Key: gdelt/gdelt_gkg_articles
-- Description: List of gkg articles mined on GDELT
+- Description: LLM-generated summary of GDELT articles
 - Compute kind: None
 - Is partitioned: True
 - Auto-materialization policy: EAGER
 - Freshess policy (maximum lag minutes): Not available
 - Freshess policy (cron schedule): Not available
-
 Upstream assets:
-- None
-
-Downstream assets:
-- data_warehouse/staging/stg__gdelt__articles
 - gdelt/gdelt_articles_enhanced
-
+Downstream assets:
+- data_warehouse/staging/stg__gdelt__articles_summary
 Latest materialization's metadata entries:
-- Last materialization timestamp: 1689093222451
-- s3_path: s3://discursus-io/sources/gdelt/20230711/20230711161500.articles.csv
-- rows: 13
-- min_gdelt_gkg_article_id: 20230711161500-1968
-- max_gdelt_gkg_article_id: 20230711161500-T589
-- path: platform/gdelt/gdelt_gkg_articles/20230711161500
-- uri: s3://discursus-io/platform/gdelt/gdelt_gkg_articles
+- Last materialization timestamp: 1689609019006
+metadata_entries:
+- s3_path: s3://discursus-io/sources/gdelt/20230717/20230717153000.articles.summary.csv
+- rows: 11
+- path: platform/gdelt/gdelt_article_summaries/20230717153000
+- uri: s3://discursus-io/platform/gdelt/gdelt_article_summaries
 ```
 
 ### Show metrics for a specific asset
