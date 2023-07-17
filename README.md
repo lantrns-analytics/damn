@@ -43,12 +43,15 @@ pip install damn-tool
 <br/><br/>
 
 
-## Connector Configuration
-The DAMN tool leverages various connectors to interact with different data systems. Configuring these connectors is done via a YAML file located at `~/.damn/connectors.yml`.
+## Connectors
+The DAMN tool leverages various connectors to interact with different service providers.
+
+
+### Configurations
+Configuring these connectors is done via a YAML file located at `~/.damn/connectors.yml`.
 
 [*See example configuration file here*](connectors.yml.REPLACE)
 
-### YAML Configuration Structure
 The configuration file uses the following structure:
 
 ```yaml
@@ -61,20 +64,10 @@ connector_type:
 - connector_type: The name of the connector (e.g., orchestrator, io-manager, data-warehouse, etc.).
 - profile_name: The name of the profile for the connector. You can have multiple profiles per connector (e.g., prod, dev, test, etc.).
 - param1, param2, etc.: The parameters needed for each connector. The required parameters will depend on the specific connector. For example, a Dagster connector might require endpoint and api_token.
-### Switching Between Profiles
-The active profile for each connector can be changed by specifying the profile when running damn commands. By default, damn will use the prod profile if no profile is specified.
-
-Example usage:
-
-```bash
-damn ls --profile dev
-```
-
-<br/><br/>
 
 
-## Connectors
-### Orchestrator
+### Connector types
+#### Orchestrator
 This is the default connector required by the DAMN tool. For now, we only support Dagster as the service provider for this connector. Here's an example configuration for an orchestrator connector with a dagster profiles:
 
 ```yaml
@@ -84,7 +77,7 @@ orchestrator:
     api_token: your-api-token
 ```
 
-### IO Manager
+#### IO Manager
 Your assets can be stored in storage services. For now, we only support the AWS storage service. This can be configured like this.
 
 ```yaml
@@ -98,13 +91,26 @@ io-manager:
     key_prefix: "asset-prefix"
 ```
 
+### Switching Between Profiles
+The active profile for each connector can be changed by specifying the profile when running damn commands. By default, damn will use the first profile configured for each connector.
+
+Example usage:
+
+```bash
+damn ls --profile dagster
+```
+
 <br/><br/>
 
 
 ## Usage
 Here are some examples of how to use this CLI tool:
 
-*Note that all commands come with the `--copy-output` option to copy the command's output to your clipboard instead of the terminal.*
+### Output option
+Note that all commands support an `output` option which allows flexibility in how the DAMN tool might be used:
+- `terminal`: By default, the output of commands will be printed to the terminal
+- `json`: You can also have the output as a `json` object, which is more useful if you're to use DAMN in a programmatic way.
+- `copy`: You can also copy the output to your clipboard, which is useful if you want to share an asset's metrics in a PR for example.
 
 ### List assets
 ```bash
@@ -174,7 +180,7 @@ foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 ```
 
 ```
-Latest Dagster materialization metrics:
+Latest orchestrator materialization metrics:
 - Latest run ID: ee9d7c67-cf31-411b-96e8-038db0252ef1
 - Status: SUCCESS
 - Start time: 2023-07-13 09:33:18
@@ -182,7 +188,7 @@ Latest Dagster materialization metrics:
 - Elapsed time: 0:00:02.623300
 
 
-Dagster partitions:
+Orchestrator partitions:
 - Number of partitions: 4368
 - Materialized partitions: 4368
 - Failed partitions: 0
