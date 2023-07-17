@@ -1,4 +1,5 @@
 import click
+import datetime
 import io
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import json
@@ -6,6 +7,13 @@ import os
 import sys
 from termcolor import colored
 import yaml
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+        return super(DateTimeEncoder, self).default(obj)
+    
 
 def load_config(connector, profile):
     # Create the Jinja environment and register the os.getenv function
@@ -54,12 +62,12 @@ def package_command_output(command, data):
             freshness_policy_cron = 'Not available'
 
         show_info["Asset attributes"] = {
-            "Description": asset_info['definition'].get('description', 'Not available'),
-            "Compute kind": asset_info['definition'].get('computeKind', 'Not available'),
-            "Is partitioned": asset_info['definition'].get('isPartitioned', 'Not available'),
-            "Auto-materialization policy": asset_info['definition'].get('autoMaterializePolicy', {}).get('policyType', 'Not available') if asset_info['definition'].get('autoMaterializePolicy', None) is not None else 'Not available',
-            "Freshess policy (maximum lag minutes)": freshness_policy_lag,
-            "Freshess policy (cron schedule)": freshness_policy_cron,
+            "description": asset_info['definition'].get('description', 'Not available'),
+            "compute_kind": asset_info['definition'].get('computeKind', 'Not available'),
+            "is_partitioned": asset_info['definition'].get('isPartitioned', 'Not available'),
+            "auto_materialization_policy": asset_info['definition'].get('autoMaterializePolicy', {}).get('policyType', 'Not available') if asset_info['definition'].get('autoMaterializePolicy', None) is not None else 'Not available',
+            "freshness_policy_lag": freshness_policy_lag,
+            "freshness_policy_cron": freshness_policy_cron,
         }
 
         show_info["Upstream assets"] = ["/".join(path['path']) for path in asset_info['definition']['dependencyKeys']]
@@ -112,13 +120,15 @@ def package_command_output(command, data):
         packaged_command_output['show'] = show_info
     
     elif command == 'metrics':
+        data['IO Manager Metrics']['size'] = format_size(data['IO Manager Metrics']['size'])
+
         metrics_info = {
             "Latest Orchestrator materialization metrics": data['Orchestrator Metrics'],
             "IO Manager": data['IO Manager Metrics']
         }
         packaged_command_output = {command: metrics_info}
 
-    return json.dumps(packaged_command_output)
+    return json.dumps(packaged_command_output, cls=DateTimeEncoder)
 
 
 def print_packaged_command_output(packaged_display_items, level=0):

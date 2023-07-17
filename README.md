@@ -149,23 +149,25 @@ foo@bar:~$ damn show gdelt/gdelt_gkg_articles
 
 ```
 Asset attributes:
-- Description: LLM-generated summary of GDELT articles
-- Compute kind: None
-- Is partitioned: True
-- Auto-materialization policy: EAGER
-- Freshess policy (maximum lag minutes): Not available
-- Freshess policy (cron schedule): Not available
+- description: List of gkg articles mined on GDELT
+- compute_kind: None
+- is_partitioned: True
+- auto_materialization_policy: EAGER
+- freshness_policy_lag: Not available
+- freshness_policy_cron: Not available
 Upstream assets:
-- gdelt/gdelt_articles_enhanced
 Downstream assets:
-- data_warehouse/staging/stg__gdelt__articles_summary
+- data_warehouse/staging/stg__gdelt__articles
+- gdelt/gdelt_articles_enhanced
 Latest materialization's metadata entries:
-- Last materialization timestamp: 1689609019006
+- Last materialization timestamp: 1689620644665
 metadata_entries:
-- s3_path: s3://discursus-io/sources/gdelt/20230717/20230717153000.articles.summary.csv
-- rows: 11
-- path: platform/gdelt/gdelt_article_summaries/20230717153000
-- uri: s3://discursus-io/platform/gdelt/gdelt_article_summaries
+- s3_path: s3://discursus-io/sources/gdelt/20230717/20230717184500.articles.csv
+- rows: 14
+- min_gdelt_gkg_article_id: 20230717184500-1056
+- max_gdelt_gkg_article_id: 20230717184500-945
+- path: platform/gdelt/gdelt_gkg_articles/20230717184500
+- uri: s3://discursus-io/platform/gdelt/gdelt_gkg_articles
 ```
 
 ### Show metrics for a specific asset
@@ -174,24 +176,19 @@ foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 ```
 
 ```
-Latest orchestrator materialization metrics:
-- Latest run ID: ee9d7c67-cf31-411b-96e8-038db0252ef1
-- Status: SUCCESS
-- Start time: 2023-07-13 09:33:18
-- End time: 2023-07-13 09:33:20
-- Elapsed time: 0:00:02.623300
-
-
-Orchestrator partitions:
-- Number of partitions: 4368
-- Materialized partitions: 4368
-- Failed partitions: 0
-
-
+Latest Orchestrator materialization metrics:
+- run_id: 5cf6d01a-aa95-44d2-b973-aa1834ae7baa
+- status: SUCCESS
+- start_time: 2023-07-17 15:18:40
+- end_time: 2023-07-17 15:18:43
+- elapsed_time: 0:00:02.889673
+- num_partitions: 4775
+- num_materialized: 4774
+- num_failed: 1
 IO Manager:
-- Files: 4381
-- File(s) size: 63.72 MB
-- Last modified: 2023-07-13 13:33:21+00:00
+- files: 4787
+- size: 71.86 MB
+- last_modified: 2023-07-17T19:18:43+00:00
 ```
 
 <br/><br/>

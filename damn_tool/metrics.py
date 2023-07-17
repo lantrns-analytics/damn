@@ -1,14 +1,17 @@
 import boto3
-from botocore.exceptions import ClientError
 import click
 import datetime
 import json
 import pyperclip
 import requests
-from termcolor import colored
 
-from .utils.helpers import load_config, package_command_output, print_packaged_command_output, run_and_capture, format_size
 from .utils.aws import list_objects_and_folders
+from .utils.helpers import (
+    load_config, 
+    package_command_output, 
+    print_packaged_command_output, 
+    run_and_capture
+)
 
 
 def get_orchestrator_metrics(asset, profile):

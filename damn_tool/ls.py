@@ -3,7 +3,12 @@ import json
 import pyperclip
 import requests
 
-from .utils.helpers import load_config, package_command_output, print_packaged_command_output, run_and_capture
+from .utils.helpers import (
+    load_config, 
+    package_command_output, 
+    print_packaged_command_output, 
+    run_and_capture
+)
 
 
 def get_orchestrator_assets(prefix, profile):
