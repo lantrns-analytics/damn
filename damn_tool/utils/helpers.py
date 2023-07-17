@@ -30,7 +30,7 @@ def load_config(connector, profile):
 
 
 def package_command_output(command, data):
-    packaged_display_items = {}
+    packaged_command_output = {}
     
     if command == 'ls':
         ls_items = []
@@ -38,20 +38,110 @@ def package_command_output(command, data):
             asset_key = "/".join(node['key']['path'])
             ls_items.append(asset_key)
         
-        packaged_display_items['ls'] = ls_items
+        packaged_command_output['ls'] = ls_items
+    
+    elif command == 'show':
+        asset_info = data["data"]["assetOrError"]
+        # Create a dictionary for 'show' command
+        show_info = {}
 
-    return json.dumps(packaged_display_items)
+        freshness_policy = asset_info['definition'].get('freshnessPolicy', None)
+        if freshness_policy is not None:
+            freshness_policy_lag = freshness_policy.get('maximumLagMinutes', 'Not available')
+            freshness_policy_cron = freshness_policy.get('cronSchedule', 'Not available')
+        else:
+            freshness_policy_lag = 'Not available'
+            freshness_policy_cron = 'Not available'
+
+        show_info["Asset attributes"] = {
+            "Key": asset_info['definition'].get('key', 'Not available'),
+            "Description": asset_info['definition'].get('description', 'Not available'),
+            "Compute kind": asset_info['definition'].get('computeKind', 'Not available'),
+            "Is partitioned": asset_info['definition'].get('isPartitioned', 'Not available'),
+            "Auto-materialization policy": asset_info['definition'].get('autoMaterializePolicy', {}).get('policyType', 'Not available') if asset_info['definition'].get('autoMaterializePolicy', None) is not None else 'Not available',
+            "Freshess policy (maximum lag minutes)": freshness_policy_lag,
+            "Freshess policy (cron schedule)": freshness_policy_cron,
+        }
+
+        show_info["Upstream assets"] = ["/".join(path['path']) for path in asset_info['definition']['dependencyKeys']]
+        show_info["Downstream assets"] = ["/".join(path['path']) for path in asset_info['definition']['dependedByKeys']]
+
+        show_info["Latest materialization's metadata entries"] = {}
+        if asset_info.get('assetMaterializations', []):
+            last_materialization = asset_info['assetMaterializations'][0]
+            show_info["Latest materialization's metadata entries"]["Last materialization timestamp"] = last_materialization.get('timestamp', 'Not available')
+
+            # handle metadata entries
+            metadata_entries_dict = {}
+            if last_materialization.get('metadataEntries', []):
+                for entry in last_materialization['metadataEntries']:
+                    label = entry.get('label', 'Not available')
+                    description = entry.get('description', 'Not available')
+                    typename = entry.get('__typename')
+
+                    value = 'Not available'
+                    if typename == 'FloatMetadataEntry':
+                        value = entry.get('floatValue', 'Not available')
+                    elif typename == 'IntMetadataEntry':
+                        value = entry.get('intValue', 'Not available')
+                    elif typename == 'JsonMetadataEntry':
+                        value = entry.get('jsonString', 'Not available')
+                    elif typename == 'BoolMetadataEntry':
+                        value = entry.get('boolValue', 'Not available')
+                    elif typename == 'MarkdownMetadataEntry':
+                        value = entry.get('mdStr', 'Not available')
+                    elif typename == 'PathMetadataEntry' or typename == 'NotebookMetadataEntry':
+                        value = entry.get('path', 'Not available')
+                    elif typename == 'PythonArtifactMetadataEntry':
+                        value = f"module: {entry.get('module', 'Not available')}, name: {entry.get('name', 'Not available')}"
+                    elif typename == 'TextMetadataEntry':
+                        value = entry.get('text', 'Not available')
+                    elif typename == 'UrlMetadataEntry':
+                        value = entry.get('url', 'Not available')
+                    elif typename == 'PipelineRunMetadataEntry':
+                        value = entry.get('runId', 'Not available')
+                    elif typename == 'AssetMetadataEntry':
+                        asset_key_path = entry.get('assetKey', {}).get('path', 'Not available')
+                        value = '/'.join(asset_key_path) if asset_key_path != 'Not available' else 'Not available'
+                    elif typename == 'NullMetadataEntry':
+                        value = 'Null'
+
+                    metadata_entries_dict[label] = value
+
+            show_info["Latest materialization's metadata entries"]["metadata_entries"] = metadata_entries_dict
+
+        packaged_command_output['show'] = show_info
+
+    return json.dumps(packaged_command_output)
 
 
-def print_packaged_command_output(packaged_display_items):
+def print_packaged_command_output(packaged_display_items, level=0):
     # Load the JSON string to a dict if it's a string
     if isinstance(packaged_display_items, str):
         packaged_display_items = json.loads(packaged_display_items)
-        
-    # Extract asset keys and print them
-    if 'ls' in packaged_display_items:
-        for asset_key in packaged_display_items['ls']:
-            click.echo(colored(f'- {asset_key}', 'cyan'))
+
+    # Check if the current item is a dictionary
+    if isinstance(packaged_display_items, dict):
+        for key, value in packaged_display_items.items():
+            # If the value is a dictionary or a list, print the key as a title and recursively print the value
+            if isinstance(value, (dict, list)):
+                # Top level keys are not printed
+                if level > 0:
+                    click.echo(colored(f"{key}:", 'magenta'))
+                print_packaged_command_output(value, level=level + 1)
+            # If the value is not a dictionary or a list, print the key-value pair
+            else:
+                click.echo(colored(f"- {key}: ", 'yellow') + colored(f"{value}", 'green'))
+    # Check if the current item is a list
+    elif isinstance(packaged_display_items, list):
+        for value in packaged_display_items:
+            # If the value is a dictionary or a list, recursively print the value
+            if isinstance(value, (dict, list)):
+                print_packaged_command_output(value, level=level + 1)
+            # If the value is not a dictionary or a list, print the value
+            else:
+                click.echo(colored(f"- {value}", 'cyan'))
+
 
 
 def run_and_capture(func, *args, **kwargs):
