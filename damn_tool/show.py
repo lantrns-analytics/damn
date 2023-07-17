@@ -148,8 +148,8 @@ def show(asset, profile, output):
     if output == 'json':
         print(packaged_command_output)
     elif output == 'copy':
-        output = run_and_capture(print_packaged_command_output, packaged_command_output)
-        markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
+        print_output = run_and_capture(print_packaged_command_output, packaged_command_output)
+        markdown_output = print_output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
         pyperclip.copy(markdown_output)
     else:
         print_packaged_command_output(packaged_command_output)

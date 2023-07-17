@@ -7,7 +7,7 @@ import pyperclip
 import requests
 from termcolor import colored
 
-from .utils.helpers import load_config, run_and_capture, format_size
+from .utils.helpers import load_config, package_command_output, print_packaged_command_output, run_and_capture, format_size
 from .utils.aws import list_objects_and_folders
 
 
@@ -133,35 +133,18 @@ def get_io_manager_metrics(asset, io_manager):
     # Get S3 items with that asset name
     s3_items = list_objects_and_folders(io_manager_config['bucket_name'], io_manager_config['key_prefix'] + "/" + asset)
     
-    return {
-        'files': s3_items[0]['num_files'],
-        'size': s3_items[0]['file_size'],
-        'last_modified': s3_items[0]['last_modified_ts']
-    }
-
-
-def display_metrics(orchestrator_metrics, io_manager_metrics, output):
-    if output == 'terminal':
-        click.echo(colored("Latest Orchestrator materialization metrics:", 'magenta'))
-        click.echo(colored(f"- Latest run ID: ", 'yellow') + colored(f"{orchestrator_metrics['run_id']}", 'green'))
-        click.echo(colored(f"- Status: ", 'yellow') + colored(f"{orchestrator_metrics['status']}", 'green'))
-        click.echo(colored(f"- Start time: ", 'yellow') + colored(f"{orchestrator_metrics['start_time']}", 'green'))
-        click.echo(colored(f"- End time: ", 'yellow') + colored(f"{orchestrator_metrics['end_time']}", 'green'))
-        click.echo(colored(f"- Elapsed time: ", 'yellow') + colored(f"{orchestrator_metrics['elapsed_time']}", 'green'))
-
-        click.echo('\n')
-
-        click.echo(colored("Orchestrator partitions:", 'magenta'))
-        click.echo(colored(f"- Number of partitions: ", 'yellow') + colored(f"{orchestrator_metrics['num_partitions']}", 'green'))
-        click.echo(colored(f"- Materialized partitions: ", 'yellow') + colored(f"{orchestrator_metrics['num_materialized']}", 'green'))
-        click.echo(colored(f"- Failed partitions: ", 'yellow') + colored(f"{orchestrator_metrics['num_failed']}", 'green'))
-
-        click.echo('\n')
-
-        click.echo(colored("IO Manager:", 'magenta'))
-        click.echo(colored(f"- Files: ", 'yellow') + colored(f"{io_manager_metrics['files']}", 'green'))
-        click.echo(colored(f"- File(s) size: ", 'yellow') + colored(format_size(io_manager_metrics['size']), 'green'))
-        click.echo(colored(f"- Last modified: ", 'yellow') + colored(f"{io_manager_metrics['last_modified']}", 'green'))
+    if s3_items:  # Ensure s3_items is not empty
+        return {
+            'files': s3_items[0]['num_files'],
+            'size': s3_items[0]['file_size'],
+            'last_modified': s3_items[0]['last_modified_ts']
+        }
+    else:
+        return {
+            'files': 0,
+            'size': 0,
+            'last_modified': None
+        }
 
 
 @click.command()
@@ -174,9 +157,18 @@ def metrics(asset, profile, io_manager, output):
     orchestrator_metrics = get_orchestrator_metrics(asset, profile)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
 
-    if output == 'copy':
-        output = run_and_capture(display_metrics, orchestrator_metrics, io_manager_metrics, 'terminal')
-        markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
+    data = {
+        "Orchestrator Metrics": orchestrator_metrics,
+        "IO Manager Metrics": io_manager_metrics
+    }
+
+    packaged_command_output = package_command_output('metrics', data)
+
+    if output == 'json':
+        print(packaged_command_output)
+    elif output == 'copy':
+        print_output = run_and_capture(print_packaged_command_output, packaged_command_output)
+        markdown_output = print_output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
         pyperclip.copy(markdown_output)
     else:
-        display_metrics(orchestrator_metrics, io_manager_metrics, output)
+        print_packaged_command_output(packaged_command_output)

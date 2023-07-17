@@ -110,6 +110,13 @@ def package_command_output(command, data):
             show_info["Latest materialization's metadata entries"]["metadata_entries"] = metadata_entries_dict
 
         packaged_command_output['show'] = show_info
+    
+    elif command == 'metrics':
+        metrics_info = {
+            "Latest Orchestrator materialization metrics": data['Orchestrator Metrics'],
+            "IO Manager": data['IO Manager Metrics']
+        }
+        packaged_command_output = {command: metrics_info}
 
     return json.dumps(packaged_command_output)
 
@@ -125,7 +132,7 @@ def print_packaged_command_output(packaged_display_items, level=0):
             # If the value is a dictionary or a list, print the key as a title and recursively print the value
             if isinstance(value, (dict, list)):
                 # Top level keys are not printed
-                if level > 0:
+                if int(level) > 0:
                     click.echo(colored(f"{key}:", 'magenta'))
                 print_packaged_command_output(value, level=level + 1)
             # If the value is not a dictionary or a list, print the key-value pair
