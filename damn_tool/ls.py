@@ -4,7 +4,7 @@ import pyperclip
 import requests
 from termcolor import colored
 
-from .utils.helpers import load_config, run_and_capture
+from .utils.helpers import load_config, package_display_items, run_and_capture
 
 
 def get_orchestrator_assets(prefix, profile):
@@ -59,12 +59,15 @@ def get_orchestrator_assets(prefix, profile):
     return response.json()
 
 
-def display_assets(data, output):
+def print_assets(packaged_display_items):
+    # Load the JSON string to a dict if it's a string
+    if isinstance(packaged_display_items, str):
+        packaged_display_items = json.loads(packaged_display_items)
+        
     # Extract asset keys and print them
-    if output == 'terminal':
-      for node in data['data']['assetsOrError']['nodes']:
-          asset_key = "/".join(node['key']['path'])
-          click.echo(colored(f'- {asset_key}', 'cyan'))
+    if 'ls' in packaged_display_items:
+        for asset_key in packaged_display_items['ls']:
+            click.echo(colored(f'- {asset_key}', 'cyan'))
 
 
 @click.command()
@@ -74,10 +77,13 @@ def display_assets(data, output):
 def ls(prefix, profile, output):
     """List your platform's data assets"""
     data = get_orchestrator_assets(prefix, profile)
+    packaged_display_items = package_display_items('ls', data)
 
-    if output == 'copy':
-        output = run_and_capture(display_assets, data, 'terminal')
+    if output == 'json':
+        print(packaged_display_items)
+    elif output == 'copy':
+        output = run_and_capture(print_assets, packaged_display_items)
         markdown_output = output.replace('\x1b[36m- ', '- ').replace('\x1b[0m', '')  # Removing the color codes
         pyperclip.copy(markdown_output)
     else:
-        display_assets(data, output)
+        print_assets(packaged_display_items)

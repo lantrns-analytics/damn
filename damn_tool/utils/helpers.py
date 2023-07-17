@@ -1,5 +1,6 @@
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import io
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+import json
 import os
 import sys
 import yaml
@@ -24,6 +25,20 @@ def load_config(connector, profile):
             return config[connector][profile]
     except KeyError:
         raise ValueError(f"No configuration found for connector '{connector}' with profile '{profile}'")
+
+
+def package_display_items(command, data):
+    packaged_display_items = {}
+    
+    if command == 'ls':
+        ls_items = []
+        for node in data['data']['assetsOrError']['nodes']:
+            asset_key = "/".join(node['key']['path'])
+            ls_items.append(asset_key)
+        
+        packaged_display_items['ls'] = ls_items
+
+    return json.dumps(packaged_display_items)
 
 
 def run_and_capture(func, *args, **kwargs):
