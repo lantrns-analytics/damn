@@ -7,14 +7,14 @@ from termcolor import colored
 from .utils.helpers import load_config, run_and_capture
 
 
-def get_dagster_asset_info(asset, profile):
+def get_orchestrator_asset_info(asset, profile):
     # Get connector configs
-    dagster_config = load_config('dagster', profile)
+    orchestrator_config = load_config('orchestrator', profile)
 
     # Set headers
     headers = {
         "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": dagster_config['api_token'],
+        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
     }
 
     # Split the asset key into a list of strings
@@ -126,7 +126,7 @@ def get_dagster_asset_info(asset, profile):
     """
 
     response = requests.post(
-        dagster_config['endpoint'], # type: ignore
+        orchestrator_config['endpoint'], # type: ignore
         headers=headers,
         json={"query": query}
     )
@@ -232,11 +232,11 @@ def display_asset_info(asset, data):
 
 @click.command()
 @click.argument('asset', required=True)
-@click.option('--profile', default='prod', help='Profile to use')
+@click.option('--profile', default=None, help='Profile to use')
 @click.option('--copy-output', is_flag=True, help='Copy command output to clipboard')
 def show(asset, profile, copy_output):
     """Show details for a specific asset"""
-    data = get_dagster_asset_info(asset, profile)
+    data = get_orchestrator_asset_info(asset, profile)
 
     if copy_output:
         output = run_and_capture(display_asset_info, asset, data)

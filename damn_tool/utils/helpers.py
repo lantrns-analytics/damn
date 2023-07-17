@@ -17,7 +17,11 @@ def load_config(connector, profile):
     config = yaml.safe_load(rendered_template)
 
     try:
-        return config[connector][profile]
+        if not profile:
+            first_key = list(config[connector].keys())[0]
+            return config[connector][first_key]
+        else:
+            return config[connector][profile]
     except KeyError:
         raise ValueError(f"No configuration found for connector '{connector}' with profile '{profile}'")
 
