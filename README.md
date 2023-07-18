@@ -192,18 +192,21 @@ foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 
 ```
 Latest Orchestrator materialization metrics:
-- run_id: 5cf6d01a-aa95-44d2-b973-aa1834ae7baa
+- run_id: 9d854f77-a8aa-40bc-ae00-de40760de9af
 - status: SUCCESS
-- start_time: 2023-07-17 15:18:40
-- end_time: 2023-07-17 15:18:43
-- elapsed_time: 0:00:02.889673
-- num_partitions: 4775
-- num_materialized: 4774
-- num_failed: 1
+- start_time: 2023-07-18 16:18:42
+- end_time: 2023-07-18 16:18:44
+- elapsed_time: 0:00:02.644409
+- num_partitions: 4875
+- num_materialized: 4875
+- num_failed: 0
 IO Manager:
-- files: 4787
-- size: 71.86 MB
-- last_modified: 2023-07-17T19:18:43+00:00
+- files: 4888
+- size: 74.15 MB
+- last_modified: 2023-07-18T20:18:45+00:00
+Data Warehouse:
+- row_count: 19
+- bytes: 5632
 ```
 
 <br/><br/>

@@ -4,17 +4,15 @@ import datetime
 import json
 import pyperclip
 
-from .utils.aws import list_objects_and_folders
 from .utils.helpers import (
     init_connectors,
-    load_config, 
     package_command_output, 
     print_packaged_command_output, 
     run_and_capture
 )
 
 
-def get_orchestrator_metrics(orchestrator_connector, asset):
+def get_orchestrator_data(orchestrator_connector, asset):
     asset_list = asset.split('/')
 
     query = f"""
@@ -106,17 +104,9 @@ def get_orchestrator_metrics(orchestrator_connector, asset):
     }
 
 
-def get_io_manager_metrics(asset, io_manager):
-    connector_type, io_manager_config = load_config('io-manager', io_manager)
-
-    # Configure boto to use your credentials
-    boto3.setup_default_session(aws_access_key_id=io_manager_config['credentials']['access_key_id'], 
-                                aws_secret_access_key=io_manager_config['credentials']['secret_access_key'])
-    
-    s3 = boto3.client('s3')
-
+def get_io_manager_data(io_manager_connector, asset):
     # Get S3 items with that asset name
-    s3_items = list_objects_and_folders(io_manager_config['bucket_name'], io_manager_config['key_prefix'] + "/" + asset)
+    s3_items = io_manager_connector.list_objects_and_folders(io_manager_connector.config['bucket_name'], io_manager_connector.config['key_prefix'] + "/" + asset)
     
     if s3_items:  # Ensure s3_items is not empty
         return {
@@ -132,14 +122,10 @@ def get_io_manager_metrics(asset, io_manager):
         }
 
 
-def get_data_warehouse_metrics(data_warehouse_connector, asset):
+def get_data_warehouse_data(data_warehouse_connector, asset):
     sql = """select
-        lower(table_schema) as table_schema,
-        lower(table_type) as table_type,
         row_count,
-        bytes,
-        created,
-        last_altered
+        bytes
         
     from information_schema.tables 
     where lower(table_name) = 'movements_dim'
@@ -163,26 +149,25 @@ def get_data_warehouse_metrics(data_warehouse_connector, asset):
 
 
 @click.command()
-@click.pass_context
 @click.argument('asset', type=str)
-@click.option('--io_manager', default=None, help='IO manager service provider to use')
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
 @click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(ctx, asset, io_manager, orchestrator, data_warehouse, output):
+def metrics(asset, orchestrator, io_manager, data_warehouse, output):
     """List your asset's metrics"""
     # Initialize connectors
-    orchestrator_connector, data_warehouse_connector = init_connectors(orchestrator, data_warehouse)
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
     
     # Get metrics
-    orchestrator_metrics = get_orchestrator_metrics(orchestrator_connector, asset)
-    io_manager_metrics = get_io_manager_metrics(asset, io_manager)
-    data_warehouse_metrics = get_data_warehouse_metrics(data_warehouse_connector, asset)
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset)
+    io_manager_data = get_io_manager_data(io_manager_connector, asset)
+    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset)
 
     data = {
-        "Orchestrator Metrics": orchestrator_metrics,
-        "IO Manager Metrics": io_manager_metrics,
-        "Data Warehouse Metrics": data_warehouse_metrics
+        "Orchestrator Metrics": orchestrator_data,
+        "IO Manager Metrics": io_manager_data,
+        "Data Warehouse Metrics": data_warehouse_data
     }
 
     # Package and output metrics

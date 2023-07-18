@@ -9,6 +9,7 @@ from termcolor import colored
 import yaml
 
 from .adapters.orchestrators.dagster import DagsterAdapter
+from .adapters.io_managers.aws import AWSAdapter
 from .adapters.data_warehouses.snowflake import SnowflakeAdapter
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -18,7 +19,7 @@ class DateTimeEncoder(json.JSONEncoder):
         return super(DateTimeEncoder, self).default(obj)
 
 
-def init_connectors(orchestrator, data_warehouse):
+def init_connectors(orchestrator, io_manager, data_warehouse):
     # Initiate orchestrator
     orchestrator_connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
 
@@ -26,6 +27,14 @@ def init_connectors(orchestrator, data_warehouse):
         orchestrator_connector = DagsterAdapter(orchestrator_config)
     else:
         orchestrator_connector = None
+    
+    # Initiate IO manager
+    io_manager_connector_type, io_manager_config = load_config('io-manager', io_manager)
+
+    if io_manager_connector_type == 'aws':
+        io_manager_connector = AWSAdapter(io_manager_config)
+    else:
+        io_manager_connector = None
 
     # Initiate data warehouse connector
     data_warehouse_connector_type, data_warehouse_config = load_config('data-warehouse', data_warehouse)
@@ -35,7 +44,7 @@ def init_connectors(orchestrator, data_warehouse):
     else:
         data_warehouse_connector = None
     
-    return orchestrator_connector, data_warehouse_connector
+    return orchestrator_connector, io_manager_connector, data_warehouse_connector
     
 
 def load_config(connector, profile):
@@ -72,7 +81,7 @@ def package_command_output(command, data):
         packaged_command_output['ls'] = ls_items
     
     elif command == 'show':
-        asset_info = data["data"]["assetOrError"]
+        asset_info = data["Orchestrator Attributes"]["data"]["assetOrError"]
         # Create a dictionary for 'show' command
         show_info = {}
 

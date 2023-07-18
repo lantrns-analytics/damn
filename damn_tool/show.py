@@ -10,7 +10,7 @@ from .utils.helpers import (
 )
 
 
-def get_orchestrator_asset_info(orchestrator_connector, asset):
+def get_orchestrator_data(orchestrator_connector, asset):
     # Split the asset key into a list of strings
     asset_key = asset.split("/")
 
@@ -125,18 +125,22 @@ def get_orchestrator_asset_info(orchestrator_connector, asset):
 
 
 @click.command()
-@click.pass_context
 @click.argument('asset', required=True)
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
 @click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def show(ctx, asset, orchestrator, data_warehouse, output):
+def show(asset, orchestrator, io_manager, data_warehouse, output):
     """Show details for a specific asset"""
     # Initialize connectors
-    orchestrator_connector, data_warehouse_connector = init_connectors(orchestrator, data_warehouse)
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
 
     # Get asset information
-    data = get_orchestrator_asset_info(orchestrator_connector, asset)
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset)
+
+    data = {
+        "Orchestrator Attributes": orchestrator_data
+    }
 
     # Package and output asset information
     packaged_command_output = package_command_output('show', data)
