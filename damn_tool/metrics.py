@@ -3,28 +3,16 @@ import click
 import datetime
 import json
 import pyperclip
-import requests
 
-from .utils.aws import list_objects_and_folders
 from .utils.helpers import (
-    load_config, 
+    init_connectors,
     package_command_output, 
     print_packaged_command_output, 
     run_and_capture
 )
 
 
-def get_orchestrator_metrics(asset, profile):
-    # Getting and processing orchestrator metrics...
-    # Get connector configs
-    orchestrator_config = load_config('orchestrator', profile)
-
-    # Set headers
-    headers = {
-        "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
-    }
-
+def get_orchestrator_data(orchestrator_connector, asset):
     asset_list = asset.split('/')
 
     query = f"""
@@ -61,15 +49,7 @@ def get_orchestrator_metrics(asset, profile):
     }}
     """
 
-    response = requests.post(
-        orchestrator_config['endpoint'], # type: ignore
-        headers=headers, # type: ignore
-        json={"query": query}
-    )
-    
-    response.raise_for_status()
-    
-    data = response.json()
+    result = orchestrator_connector.execute(query)
 
     run_id = 'N/A'
     status = 'N/A'
@@ -80,7 +60,7 @@ def get_orchestrator_metrics(asset, profile):
     num_materialized = 'N/A'
     num_failed = 'N/A'
 
-    asset_info = data["data"]["assetOrError"]
+    asset_info = result["data"]["assetOrError"]
 
     # Get AssetMaterializations attributes
     if asset_info['assetMaterializations']:
@@ -124,17 +104,9 @@ def get_orchestrator_metrics(asset, profile):
     }
 
 
-def get_io_manager_metrics(asset, io_manager):
-    io_manager_config = load_config('io-manager', io_manager)
-
-    # Configure boto to use your credentials
-    boto3.setup_default_session(aws_access_key_id=io_manager_config['credentials']['access_key_id'], 
-                                aws_secret_access_key=io_manager_config['credentials']['secret_access_key'])
-    
-    s3 = boto3.client('s3')
-
+def get_io_manager_data(io_manager_connector, asset):
     # Get S3 items with that asset name
-    s3_items = list_objects_and_folders(io_manager_config['bucket_name'], io_manager_config['key_prefix'] + "/" + asset)
+    s3_items = io_manager_connector.list_objects_and_folders(io_manager_connector.config['bucket_name'], io_manager_connector.config['key_prefix'] + "/" + asset)
     
     if s3_items:  # Ensure s3_items is not empty
         return {
@@ -150,21 +122,55 @@ def get_io_manager_metrics(asset, io_manager):
         }
 
 
+def get_data_warehouse_data(data_warehouse_connector, asset):
+    sql = """select
+        row_count,
+        bytes
+        
+    from information_schema.tables 
+    where lower(table_name) = 'movements_dim'
+    and lower(table_schema) like '%analytics%'
+    """
+
+    result, description = data_warehouse_connector.execute(sql)
+    data_warehouse_connector.close()
+
+    if result is not None:
+        result_dict = dict(zip([column[0] for column in description], result))
+        return {
+            'row_count': result_dict.get('ROW_COUNT', None),
+            'bytes': result_dict.get('BYTES', None)
+        }
+    else:
+        return {
+            'row_count': None,
+            'bytes': None
+        }
+
+
 @click.command()
 @click.argument('asset', type=str)
-@click.option('--profile', default=None, help='Profile to use')
-@click.option('--io_manager', default='aws', help='IO manager storage system to use')
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(asset, profile, io_manager, output):
+def metrics(asset, orchestrator, io_manager, data_warehouse, output):
     """List your asset's metrics"""
-    orchestrator_metrics = get_orchestrator_metrics(asset, profile)
-    io_manager_metrics = get_io_manager_metrics(asset, io_manager)
+    # Initialize connectors
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
+    
+    # Get metrics
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset)
+    io_manager_data = get_io_manager_data(io_manager_connector, asset)
+    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset)
 
     data = {
-        "Orchestrator Metrics": orchestrator_metrics,
-        "IO Manager Metrics": io_manager_metrics
+        "Orchestrator Metrics": orchestrator_data,
+        "IO Manager Metrics": io_manager_data,
+        "Data Warehouse Metrics": data_warehouse_data
     }
 
+    # Package and output metrics
     packaged_command_output = package_command_output('metrics', data)
 
     if output == 'json':

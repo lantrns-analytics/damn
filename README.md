@@ -56,19 +56,19 @@ The configuration file uses the following structure:
 
 ```yaml
 connector_type:
-  profile_name:
+  service_provider:
     param1: value1
     param2: value2
 ```
 
 - connector_type: The name of the connector (e.g., orchestrator, io-manager, data-warehouse, etc.).
-- profile_name: The name of the profile for the connector. You can have multiple profiles per connector (e.g., prod, dev, test, etc.).
+- service_provider: The name of the service provider for the connector. You can have multiple providers per connector.
 - param1, param2, etc.: The parameters needed for each connector. The required parameters will depend on the specific connector. For example, a Dagster connector might require endpoint and api_token.
 
 
 ### Connector types
 #### Orchestrator
-This is the default connector required by the DAMN tool. For now, we only support Dagster as the service provider for this connector. Here's an example configuration for an orchestrator connector with a dagster profiles:
+This is the default connector required by the DAMN tool. For now, we only support Dagster as the service provider for this connector. Here's an example configuration for an orchestrator connector with a dagster profile:
 
 ```yaml
 orchestrator:
@@ -91,13 +91,28 @@ io-manager:
     key_prefix: "asset-prefix"
 ```
 
-### Switching Between Profiles
-The active profile for each connector can be changed by specifying the profile when running damn commands. By default, damn will use the first profile configured for each connector.
+#### Data Warehouses
+Your assets can be materialized to a data warehouse. For now, we only support Snowflake. This can be configured like this.
+
+```yaml
+data-warehouse:
+  snowflake:
+    account: ab1234.us-east-1
+    user: username
+    password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+    role: my-role
+    database: my-database
+    warehouse: my-warehouse
+    schema: analytics
+```
+
+### Switching Between Service Providers
+The active service provider for each connector can be changed by specifying the service provider when running DAMN commands. By default, DAMN will use the first service provider configured for each connector.
 
 Example usage:
 
 ```bash
-damn ls --profile dagster
+damn ls --orchestrator dagster --io-manager aws --data-warehouse snowflake
 ```
 
 <br/><br/>
@@ -177,18 +192,21 @@ foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 
 ```
 Latest Orchestrator materialization metrics:
-- run_id: 5cf6d01a-aa95-44d2-b973-aa1834ae7baa
+- run_id: 9d854f77-a8aa-40bc-ae00-de40760de9af
 - status: SUCCESS
-- start_time: 2023-07-17 15:18:40
-- end_time: 2023-07-17 15:18:43
-- elapsed_time: 0:00:02.889673
-- num_partitions: 4775
-- num_materialized: 4774
-- num_failed: 1
+- start_time: 2023-07-18 16:18:42
+- end_time: 2023-07-18 16:18:44
+- elapsed_time: 0:00:02.644409
+- num_partitions: 4875
+- num_materialized: 4875
+- num_failed: 0
 IO Manager:
-- files: 4787
-- size: 71.86 MB
-- last_modified: 2023-07-17T19:18:43+00:00
+- files: 4888
+- size: 74.15 MB
+- last_modified: 2023-07-18T20:18:45+00:00
+Data Warehouse:
+- row_count: 19
+- bytes: 5632
 ```
 
 <br/><br/>

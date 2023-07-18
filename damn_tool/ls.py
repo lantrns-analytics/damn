@@ -1,26 +1,16 @@
 import click
 import json
 import pyperclip
-import requests
 
 from .utils.helpers import (
-    load_config, 
+    init_connectors,
     package_command_output, 
     print_packaged_command_output, 
     run_and_capture
 )
 
 
-def get_orchestrator_assets(prefix, profile):
-    # Get connector configs
-    orchestrator_config = load_config('orchestrator', profile)
-
-    # Set headers
-    headers = {
-        "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
-    }
-
+def get_orchestrator_data(orchestrator_connector, prefix):
     # Get data
     if prefix:
       prefix_list = prefix.split('/')
@@ -52,25 +42,27 @@ def get_orchestrator_assets(prefix, profile):
       }
       """
 
-    response = requests.post(
-        orchestrator_config['endpoint'], # type: ignore
-        headers=headers, # type: ignore
-        json={"query": query}
-    )
+    result = orchestrator_connector.execute(query)
     
-    response.raise_for_status()
-    
-    return response.json()
+    return result
 
 
 @click.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
-@click.option('--profile', default=None, help='Profile to use')
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def ls(prefix, profile, output):
+def ls(prefix, orchestrator, io_manager, data_warehouse, output):
     """List your platform's data assets"""
-    data = get_orchestrator_assets(prefix, profile)
-    packaged_command_output = package_command_output('ls', data)
+    # Initialize connectors
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
+
+    # Get assets
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix)
+
+    # Package and output assets
+    packaged_command_output = package_command_output('ls', orchestrator_data)
 
     if output == 'json':
         print(packaged_command_output)
