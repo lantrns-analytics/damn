@@ -30,9 +30,9 @@ def load_config(connector, profile):
     try:
         if not profile:
             first_key = list(config[connector].keys())[0]
-            return config[connector][first_key]
+            return first_key, config[connector][first_key]
         else:
-            return config[connector][profile]
+            return profile, config[connector][profile]
     except KeyError:
         raise ValueError(f"No configuration found for connector '{connector}' with profile '{profile}'")
 

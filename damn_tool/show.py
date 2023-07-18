@@ -13,7 +13,7 @@ from .utils.helpers import (
 
 def get_orchestrator_asset_info(asset, orchestrator):
     # Get connector configs
-    orchestrator_config = load_config('orchestrator', orchestrator)
+    connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
 
     # Set headers
     headers = {

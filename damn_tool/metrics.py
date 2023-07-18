@@ -4,7 +4,6 @@ import datetime
 import json
 import pyperclip
 import requests
-import snowflake.connector
 
 from .utils.aws import list_objects_and_folders
 from .utils.helpers import (
@@ -18,7 +17,7 @@ from .utils.helpers import (
 def get_orchestrator_metrics(asset, orchestrator):
     # Getting and processing orchestrator metrics...
     # Get connector configs
-    orchestrator_config = load_config('orchestrator', orchestrator)
+    connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
 
     # Set headers
     headers = {
@@ -126,7 +125,7 @@ def get_orchestrator_metrics(asset, orchestrator):
 
 
 def get_io_manager_metrics(asset, io_manager):
-    io_manager_config = load_config('io-manager', io_manager)
+    connector_type, io_manager_config = load_config('io-manager', io_manager)
 
     # Configure boto to use your credentials
     boto3.setup_default_session(aws_access_key_id=io_manager_config['credentials']['access_key_id'], 
@@ -151,9 +150,7 @@ def get_io_manager_metrics(asset, io_manager):
         }
 
 
-def get_data_warehouse_metrics(asset, data_warehouse):
-    data_warehouse_config = load_config('data-warehouse', data_warehouse)
-
+def get_data_warehouse_metrics(data_warehouse_connector, asset):
     sql = """select
         lower(table_schema) as table_schema,
         lower(table_type) as table_type,
@@ -167,52 +164,42 @@ def get_data_warehouse_metrics(asset, data_warehouse):
     and lower(table_schema) like '%analytics%'
     """
 
-    conn = snowflake.connector.connect(
-        user=data_warehouse_config['user'],
-        password=data_warehouse_config['password'],
-        account=data_warehouse_config['account'],
-        warehouse=data_warehouse_config['warehouse'],
-        database=data_warehouse_config['database'],
-        schema=data_warehouse_config['schema']
-    )
-    cur = conn.cursor()
+    result, description = data_warehouse_connector.execute(sql)
+    data_warehouse_connector.close()
 
-    try:
-        # Running queries
-        cur.execute(sql)
-        result = cur.fetchone()  # Fetch the first row of the result
-        if result is not None:
-            result_dict = dict(zip([column[0] for column in cur.description], result))
-            return {
-                'row_count': result_dict.get('ROW_COUNT', None)
-            }
-        else:
-            return {
-                'row_count': None
-            }
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
-        
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    if result is not None:
+        result_dict = dict(zip([column[0] for column in description], result))
+        return {
+            'row_count': result_dict.get('ROW_COUNT', None),
+            'bytes': result_dict.get('BYTES', None)
+        }
+    else:
+        return {
+            'row_count': None,
+            'bytes': None
+        }
 
 
 @click.command()
+@click.pass_context
 @click.argument('asset', type=str)
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
 @click.option('--io_manager', default=None, help='IO manager service provider to use')
-@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(asset, orchestrator, io_manager, data_warehouse, output):
+def metrics(ctx, asset, orchestrator, io_manager, output):
     """List your asset's metrics"""
+
+    # Initialize connectors
+    data_warehouse = ctx.obj.get('DATA_WAREHOUSE')
+    data_warehouse_connector = None
+    if data_warehouse == 'snowflake':
+        data_warehouse_connector = ctx.obj.get('SNOWFLAKE_ADAPTER')
+    else:
+        raise ValueError(f'Unsupported data warehouse: {data_warehouse}')
+
     orchestrator_metrics = get_orchestrator_metrics(asset, orchestrator)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
-    data_warehouse_metrics = get_data_warehouse_metrics(asset, data_warehouse)
+    data_warehouse_metrics = get_data_warehouse_metrics(data_warehouse_connector, asset)
 
     data = {
         "Orchestrator Metrics": orchestrator_metrics,
