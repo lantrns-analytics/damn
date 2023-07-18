@@ -123,12 +123,15 @@ def get_io_manager_data(io_manager_connector, asset):
 
 
 def get_data_warehouse_data(data_warehouse_connector, asset):
-    sql = """select
+    asset = asset.lower()  # Make sure the asset name is lower case
+    asset_name = asset.split('/')[-1]  # Get the last section after splitting by '/'
+
+    sql = f"""select
         row_count,
         bytes
-        
+
     from information_schema.tables 
-    where lower(table_name) = 'movements_dim'
+    where lower(table_name) = '{asset_name}'
     and lower(table_schema) like '%analytics%'
     """
 

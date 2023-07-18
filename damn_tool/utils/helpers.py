@@ -153,6 +153,7 @@ def package_command_output(command, data):
     
     elif command == 'metrics':
         data['IO Manager Metrics']['size'] = format_size(data['IO Manager Metrics']['size'])
+        data['Data Warehouse Metrics']['bytes'] = format_size(data['Data Warehouse Metrics']['bytes'])
 
         metrics_info = {
             "Latest Orchestrator materialization metrics": data['Orchestrator Metrics'],
