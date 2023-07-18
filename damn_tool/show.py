@@ -121,7 +121,54 @@ def get_orchestrator_data(orchestrator_connector, asset):
 
     result = orchestrator_connector.execute(query)
     
-    return result
+    # Initialize the return dictionary with some default values
+    data = {
+        'description': None,
+        'computeKind': None,
+        'policyType': None,
+        'maximumLagMinutes': None,
+        'cronSchedule': None,
+        'isPartitioned': None,
+        'dependedByKeys': None,
+        'dependencyKeys': None,
+        'metadataEntries': {}
+    }
+
+    # Check for assetOrError and whether it's an Asset
+    if "data" in result and "assetOrError" in result["data"] and result["data"]["assetOrError"]["__typename"] == "Asset":
+        asset_info = result["data"]["assetOrError"]
+
+        # Get Definition attributes
+        if 'definition' in asset_info:
+          definition = asset_info['definition']
+          data['description'] = definition.get('description')
+          data['computeKind'] = definition.get('computeKind')
+
+          auto_materialize_policy = definition.get('autoMaterializePolicy')
+          if auto_materialize_policy is not None:
+              data['policyType'] = auto_materialize_policy.get('policyType')
+
+          freshness_policy = definition.get('freshnessPolicy')
+          if freshness_policy is not None:
+              data['maximumLagMinutes'] = freshness_policy.get('maximumLagMinutes')
+              data['cronSchedule'] = freshness_policy.get('cronSchedule')
+
+          data['isPartitioned'] = definition.get('isPartitioned')
+          data['dependedByKeys'] = [d.get('path') for d in definition.get('dependedByKeys', [])]
+          data['dependencyKeys'] = [d.get('path') for d in definition.get('dependencyKeys', [])]
+
+        # Get metadataEntries attributes
+        if 'assetMaterializations' in asset_info and asset_info['assetMaterializations']:
+            first_materialization = asset_info['assetMaterializations'][0]
+            metadata_entries = first_materialization.get('metadataEntries', [])
+
+            for entry in metadata_entries:
+                label = entry.get('label')
+                for typename, value in entry.items():
+                    if typename.endswith('Value') or typename.endswith('String') or typename == 'path' or typename == 'module' or typename == 'name' or typename == 'url' or typename == 'runId':
+                        data['metadataEntries'][label] = value
+
+    return data
 
 
 @click.command()
