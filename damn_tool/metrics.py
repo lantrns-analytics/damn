@@ -3,10 +3,10 @@ import click
 import datetime
 import json
 import pyperclip
-import requests
 
 from .utils.aws import list_objects_and_folders
 from .utils.helpers import (
+    init_connectors,
     load_config, 
     package_command_output, 
     print_packaged_command_output, 
@@ -14,17 +14,7 @@ from .utils.helpers import (
 )
 
 
-def get_orchestrator_metrics(asset, orchestrator):
-    # Getting and processing orchestrator metrics...
-    # Get connector configs
-    connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
-
-    # Set headers
-    headers = {
-        "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
-    }
-
+def get_orchestrator_metrics(orchestrator_connector, asset):
     asset_list = asset.split('/')
 
     query = f"""
@@ -61,15 +51,7 @@ def get_orchestrator_metrics(asset, orchestrator):
     }}
     """
 
-    response = requests.post(
-        orchestrator_config['endpoint'], # type: ignore
-        headers=headers, # type: ignore
-        json={"query": query}
-    )
-    
-    response.raise_for_status()
-    
-    data = response.json()
+    result = orchestrator_connector.execute(query)
 
     run_id = 'N/A'
     status = 'N/A'
@@ -80,7 +62,7 @@ def get_orchestrator_metrics(asset, orchestrator):
     num_materialized = 'N/A'
     num_failed = 'N/A'
 
-    asset_info = data["data"]["assetOrError"]
+    asset_info = result["data"]["assetOrError"]
 
     # Get AssetMaterializations attributes
     if asset_info['assetMaterializations']:
@@ -183,21 +165,17 @@ def get_data_warehouse_metrics(data_warehouse_connector, asset):
 @click.command()
 @click.pass_context
 @click.argument('asset', type=str)
-@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
 @click.option('--io_manager', default=None, help='IO manager service provider to use')
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(ctx, asset, orchestrator, io_manager, output):
+def metrics(ctx, asset, io_manager, orchestrator, data_warehouse, output):
     """List your asset's metrics"""
-
     # Initialize connectors
-    data_warehouse = ctx.obj.get('DATA_WAREHOUSE')
-    data_warehouse_connector = None
-    if data_warehouse == 'snowflake':
-        data_warehouse_connector = ctx.obj.get('SNOWFLAKE_ADAPTER')
-    else:
-        raise ValueError(f'Unsupported data warehouse: {data_warehouse}')
-
-    orchestrator_metrics = get_orchestrator_metrics(asset, orchestrator)
+    orchestrator_connector, data_warehouse_connector = init_connectors(orchestrator, data_warehouse)
+    
+    # Get metrics
+    orchestrator_metrics = get_orchestrator_metrics(orchestrator_connector, asset)
     io_manager_metrics = get_io_manager_metrics(asset, io_manager)
     data_warehouse_metrics = get_data_warehouse_metrics(data_warehouse_connector, asset)
 
@@ -207,6 +185,7 @@ def metrics(ctx, asset, orchestrator, io_manager, output):
         "Data Warehouse Metrics": data_warehouse_metrics
     }
 
+    # Package and output metrics
     packaged_command_output = package_command_output('metrics', data)
 
     if output == 'json':

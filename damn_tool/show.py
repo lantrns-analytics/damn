@@ -1,26 +1,16 @@
 import click
 import json
 import pyperclip
-import requests
 
 from .utils.helpers import (
-    load_config, 
+    init_connectors,
     package_command_output, 
     print_packaged_command_output, 
     run_and_capture
 )
 
 
-def get_orchestrator_asset_info(asset, orchestrator):
-    # Get connector configs
-    connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
-
-    # Set headers
-    headers = {
-        "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
-    }
-
+def get_orchestrator_asset_info(orchestrator_connector, asset):
     # Split the asset key into a list of strings
     asset_key = asset.split("/")
 
@@ -129,24 +119,26 @@ def get_orchestrator_asset_info(asset, orchestrator):
     }}
     """
 
-    response = requests.post(
-        orchestrator_config['endpoint'], # type: ignore
-        headers=headers,
-        json={"query": query}
-    )
+    result = orchestrator_connector.execute(query)
     
-    response.raise_for_status()
-    
-    return response.json()
+    return result
 
 
 @click.command()
+@click.pass_context
 @click.argument('asset', required=True)
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def show(asset, orchestrator, output):
+def show(ctx, asset, orchestrator, data_warehouse, output):
     """Show details for a specific asset"""
-    data = get_orchestrator_asset_info(asset, orchestrator)
+    # Initialize connectors
+    orchestrator_connector, data_warehouse_connector = init_connectors(orchestrator, data_warehouse)
+
+    # Get asset information
+    data = get_orchestrator_asset_info(orchestrator_connector, asset)
+
+    # Package and output asset information
     packaged_command_output = package_command_output('show', data)
 
     if output == 'json':

@@ -56,19 +56,19 @@ The configuration file uses the following structure:
 
 ```yaml
 connector_type:
-  profile_name:
+  service_provider:
     param1: value1
     param2: value2
 ```
 
 - connector_type: The name of the connector (e.g., orchestrator, io-manager, data-warehouse, etc.).
-- profile_name: The name of the profile for the connector. You can have multiple profiles per connector (e.g., prod, dev, test, etc.).
+- service_provider: The name of the service provider for the connector. You can have multiple providers per connector.
 - param1, param2, etc.: The parameters needed for each connector. The required parameters will depend on the specific connector. For example, a Dagster connector might require endpoint and api_token.
 
 
 ### Connector types
 #### Orchestrator
-This is the default connector required by the DAMN tool. For now, we only support Dagster as the service provider for this connector. Here's an example configuration for an orchestrator connector with a dagster profiles:
+This is the default connector required by the DAMN tool. For now, we only support Dagster as the service provider for this connector. Here's an example configuration for an orchestrator connector with a dagster profile:
 
 ```yaml
 orchestrator:
@@ -106,8 +106,8 @@ data-warehouse:
     schema: analytics
 ```
 
-### Switching Between Profiles
-The active profile for each connector can be changed by specifying the profile when running damn commands. By default, damn will use the first profile configured for each connector.
+### Switching Between Service Providers
+The active service provider for each connector can be changed by specifying the service provider when running DAMN commands. By default, DAMN will use the first service provider configured for each connector.
 
 Example usage:
 

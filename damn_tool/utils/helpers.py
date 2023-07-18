@@ -8,11 +8,34 @@ import sys
 from termcolor import colored
 import yaml
 
+from .adapters.orchestrators.dagster import DagsterAdapter
+from .adapters.data_warehouses.snowflake import SnowflakeAdapter
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.date, datetime.datetime)):
             return obj.isoformat()
         return super(DateTimeEncoder, self).default(obj)
+
+
+def init_connectors(orchestrator, data_warehouse):
+    # Initiate orchestrator
+    orchestrator_connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
+
+    if orchestrator_connector_type == 'dagster':
+        orchestrator_connector = DagsterAdapter(orchestrator_config)
+    else:
+        orchestrator_connector = None
+
+    # Initiate data warehouse connector
+    data_warehouse_connector_type, data_warehouse_config = load_config('data-warehouse', data_warehouse)
+
+    if data_warehouse_connector_type == 'snowflake':
+        data_warehouse_connector = SnowflakeAdapter(data_warehouse_config)
+    else:
+        data_warehouse_connector = None
+    
+    return orchestrator_connector, data_warehouse_connector
     
 
 def load_config(connector, profile):

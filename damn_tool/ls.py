@@ -1,26 +1,16 @@
 import click
 import json
 import pyperclip
-import requests
 
 from .utils.helpers import (
-    load_config, 
+    init_connectors,
     package_command_output, 
     print_packaged_command_output, 
     run_and_capture
 )
 
 
-def get_orchestrator_assets(prefix, orchestrator):
-    # Get connector configs
-    connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
-
-    # Set headers
-    headers = {
-        "Content-Type": "application/json",
-        "Dagster-Cloud-Api-Token": orchestrator_config['api_token'],
-    }
-
+def get_orchestrator_assets(orchestrator_connector, prefix):
     # Get data
     if prefix:
       prefix_list = prefix.split('/')
@@ -52,24 +42,25 @@ def get_orchestrator_assets(prefix, orchestrator):
       }
       """
 
-    response = requests.post(
-        orchestrator_config['endpoint'], # type: ignore
-        headers=headers, # type: ignore
-        json={"query": query}
-    )
+    result = orchestrator_connector.execute(query)
     
-    response.raise_for_status()
-    
-    return response.json()
+    return result
 
 
 @click.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def ls(prefix, orchestrator, output):
+def ls(prefix, orchestrator, data_warehouse, output):
     """List your platform's data assets"""
-    data = get_orchestrator_assets(prefix, orchestrator)
+    # Initialize connectors
+    orchestrator_connector, data_warehouse_connector = init_connectors(orchestrator, data_warehouse)
+
+    # Get assets
+    data = get_orchestrator_assets(orchestrator_connector, prefix)
+
+    # Package and output assets
     packaged_command_output = package_command_output('ls', data)
 
     if output == 'json':
