@@ -99,7 +99,8 @@ def package_command_output(command, data):
     
     elif command == 'show':
         show_info = {
-            "From orchestrator": data['Orchestrator Attributes']
+            "From orchestrator": data['Orchestrator Attributes'],
+            "From data warehouse": data['Data Warehouse Attributes']
         }
         packaged_command_output = {command: show_info}
     

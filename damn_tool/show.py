@@ -171,6 +171,41 @@ def get_orchestrator_data(orchestrator_connector, asset):
     return data
 
 
+def get_data_warehouse_data(data_warehouse_connector, asset):
+    asset = asset.lower()  # Make sure the asset name is lower case
+    asset_name = asset.split('/')[-1]  # Get the last section after splitting by '/'
+
+    sql = f"""select
+        lower(table_schema) as table_schema,
+        lower(table_type) as table_type,
+        created,
+        last_altered
+
+    from information_schema.tables 
+    where lower(table_name) = '{asset_name}'
+    and lower(table_schema) like '%analytics%'
+    """
+
+    result, description = data_warehouse_connector.execute(sql)
+    data_warehouse_connector.close()
+
+    if result is not None:
+        result_dict = dict(zip([column[0] for column in description], result))
+        return {
+            'table_schema': result_dict.get('TABLE_SCHEMA', None),
+            'table_type': result_dict.get('TABLE_TYPE', None),
+            'created': result_dict.get('CREATED', None),
+            'last_altered': result_dict.get('LAST_ALTERED', None)
+        }
+    else:
+        return {
+            'table_schema': None,
+            'table_type': None,
+            'created': None,
+            'last_altered': None
+        }
+
+
 @click.command()
 @click.argument('asset', required=True)
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
@@ -184,9 +219,11 @@ def show(asset, orchestrator, io_manager, data_warehouse, output):
 
     # Get asset information
     orchestrator_data = get_orchestrator_data(orchestrator_connector, asset)
+    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset)
 
     data = {
-        "Orchestrator Attributes": orchestrator_data
+        "Orchestrator Attributes": orchestrator_data,
+        "Data Warehouse Attributes": data_warehouse_data
     }
 
     # Package and output asset information
