@@ -159,9 +159,9 @@ def metrics(asset, orchestrator, io_manager, data_warehouse, output):
     orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
     
     # Get metrics
-    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset)
-    io_manager_data = get_io_manager_data(io_manager_connector, asset)
-    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset)
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset) if orchestrator_connector else None
+    io_manager_data = get_io_manager_data(io_manager_connector, asset) if io_manager_connector else None
+    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset) if data_warehouse_connector else None
 
     data = {
         "Orchestrator Metrics": orchestrator_data,
