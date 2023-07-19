@@ -59,7 +59,7 @@ def ls(prefix, orchestrator, io_manager, data_warehouse, output):
     orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
 
     # Get assets
-    orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix)
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix) if orchestrator_connector else None
 
     # Package and output assets
     packaged_command_output = package_command_output('ls', orchestrator_data)

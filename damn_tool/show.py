@@ -218,8 +218,8 @@ def show(asset, orchestrator, io_manager, data_warehouse, output):
     orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
 
     # Get asset information
-    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset)
-    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset)
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, asset) if orchestrator_connector else None
+    data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset) if data_warehouse_connector else None
 
     data = {
         "Orchestrator Attributes": orchestrator_data,

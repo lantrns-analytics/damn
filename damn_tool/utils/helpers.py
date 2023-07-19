@@ -83,7 +83,7 @@ def load_config(connector, profile):
         else:
             return profile, config[connector][profile]
     except KeyError:
-        raise ValueError(f"No configuration found for connector '{connector}' with profile '{profile}'")
+        return None, None
 
 
 def package_command_output(command, data):
@@ -105,8 +105,10 @@ def package_command_output(command, data):
         packaged_command_output = {command: show_info}
     
     elif command == 'metrics':
-        data['IO Manager Metrics']['size'] = format_size(data['IO Manager Metrics']['size'])
-        data['Data Warehouse Metrics']['bytes'] = format_size(data['Data Warehouse Metrics']['bytes'])
+        if data['IO Manager Metrics'] is not None:
+            data['IO Manager Metrics']['size'] = format_size(data['IO Manager Metrics']['size'])
+        if data['Data Warehouse Metrics'] is not None:
+            data['Data Warehouse Metrics']['bytes'] = format_size(data['Data Warehouse Metrics']['bytes'])
 
         metrics_info = {
             "From orchestrator": data['Orchestrator Metrics'],
