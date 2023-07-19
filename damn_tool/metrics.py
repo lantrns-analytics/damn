@@ -1,8 +1,8 @@
-import boto3
 import click
 import datetime
 import json
 import pyperclip
+from typing import Dict, Optional
 
 from .utils.helpers import (
     init_connectors,
@@ -51,36 +51,41 @@ def get_orchestrator_data(orchestrator_connector, asset):
 
     result = orchestrator_connector.execute(query)
 
-    run_id = 'N/A'
-    status = 'N/A'
-    start_time = 'N/A'
-    end_time = 'N/A'
-    elapsed_time = 'N/A'
-    num_partitions = 'N/A'
-    num_materialized = 'N/A'
-    num_failed = 'N/A'
+    data: Dict[str, Optional[str]] = {
+        'run_id': None,
+        'status': None,
+        'start_time': None,
+        'end_time': None,
+        'elapsed_time': None,
+        'num_partitions': None,
+        'num_materialized': None,
+        'num_failed': None
+    }
 
     asset_info = result["data"]["assetOrError"]
 
     # Get AssetMaterializations attributes
-    if asset_info['assetMaterializations']:
+    if not asset_info or 'assetMaterializations' not in asset_info:
+        return data
+    
+    else:
         first_materialization = asset_info['assetMaterializations'][0]
-        run_id = first_materialization['runId'] if 'runId' in first_materialization else 'N/A'
+        data['run_id'] = first_materialization['runId'] if 'runId' in first_materialization else None
 
         # Extract stepStats if available
         step_stats = first_materialization['stepStats'] if 'stepStats' in first_materialization else {}
-        status = step_stats['status'] if 'status' in step_stats else 'N/A'
+        data['status'] = step_stats['status'] if 'status' in step_stats else None
         
         if 'startTime' in step_stats:
-            start_time = datetime.datetime.fromtimestamp(step_stats['startTime']).strftime('%Y-%m-%d %H:%M:%S')
+            data['start_time'] = datetime.datetime.fromtimestamp(step_stats['startTime']).strftime('%Y-%m-%d %H:%M:%S')
 
         if 'endTime' in step_stats:
-            end_time = datetime.datetime.fromtimestamp(step_stats['endTime']).strftime('%Y-%m-%d %H:%M:%S')
+            data['end_time'] = datetime.datetime.fromtimestamp(step_stats['endTime']).strftime('%Y-%m-%d %H:%M:%S')
 
         # Calculate and format elapsed time
         if 'startTime' in step_stats and 'endTime' in step_stats:
             elapsed_seconds = step_stats['endTime'] - step_stats['startTime']
-            elapsed_time = str(datetime.timedelta(seconds=elapsed_seconds))
+            data['elapsed_time'] = str(datetime.timedelta(seconds=elapsed_seconds))
                     
     # Get Definition attributes
     if asset_info['definition']:
@@ -88,20 +93,11 @@ def get_orchestrator_data(orchestrator_connector, asset):
         
         if 'partitionStats' in definition and definition['partitionStats'] is not None:
             partition_stats = definition['partitionStats']
-            num_partitions = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else 'N/A'
-            num_materialized = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else 'N/A'
-            num_failed = partition_stats['numFailed'] if 'numFailed' in partition_stats else 'N/A'
+            data['num_partitions'] = partition_stats['numPartitions'] if 'numPartitions' in partition_stats else None
+            data['num_materialized'] = partition_stats['numMaterialized'] if 'numMaterialized' in partition_stats else None
+            data['num_failed'] = partition_stats['numFailed'] if 'numFailed' in partition_stats else None
 
-    return {
-        'run_id': run_id,
-        'status': status,
-        'start_time': start_time,
-        'end_time': end_time,
-        'elapsed_time': elapsed_time,
-        'num_partitions': num_partitions,
-        'num_materialized': num_materialized,
-        'num_failed': num_failed
-    }
+    return data
 
 
 def get_io_manager_data(io_manager_connector, asset):
