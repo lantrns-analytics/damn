@@ -19,6 +19,23 @@ class DateTimeEncoder(json.JSONEncoder):
         return super(DateTimeEncoder, self).default(obj)
 
 
+def format_size(size):
+    # if size is None, return a default value
+    if size is None:
+        return "N/A"
+
+    # Size must be bytes
+    units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    unit = 0
+
+    while size >= 1024 and unit < len(units)-1:
+        # shift to the next unit
+        size /= 1024
+        unit += 1
+
+    return f"{size:.2f} {units[unit]}"
+
+
 def init_connectors(orchestrator, io_manager, data_warehouse):
     # Initiate orchestrator
     orchestrator_connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
@@ -81,117 +98,54 @@ def package_command_output(command, data):
         packaged_command_output['ls'] = ls_items
     
     elif command == 'show':
-        asset_info = data["Orchestrator Attributes"]["data"]["assetOrError"]
-        # Create a dictionary for 'show' command
-        show_info = {}
-
-        freshness_policy = asset_info['definition'].get('freshnessPolicy', None)
-        if freshness_policy is not None:
-            freshness_policy_lag = freshness_policy.get('maximumLagMinutes', 'Not available')
-            freshness_policy_cron = freshness_policy.get('cronSchedule', 'Not available')
-        else:
-            freshness_policy_lag = 'Not available'
-            freshness_policy_cron = 'Not available'
-
-        show_info["Asset attributes"] = {
-            "description": asset_info['definition'].get('description', 'Not available'),
-            "compute_kind": asset_info['definition'].get('computeKind', 'Not available'),
-            "is_partitioned": asset_info['definition'].get('isPartitioned', 'Not available'),
-            "auto_materialization_policy": asset_info['definition'].get('autoMaterializePolicy', {}).get('policyType', 'Not available') if asset_info['definition'].get('autoMaterializePolicy', None) is not None else 'Not available',
-            "freshness_policy_lag": freshness_policy_lag,
-            "freshness_policy_cron": freshness_policy_cron,
+        show_info = {
+            "From orchestrator": data['Orchestrator Attributes'],
+            "From data warehouse": data['Data Warehouse Attributes']
         }
-
-        show_info["Upstream assets"] = ["/".join(path['path']) for path in asset_info['definition']['dependencyKeys']]
-        show_info["Downstream assets"] = ["/".join(path['path']) for path in asset_info['definition']['dependedByKeys']]
-
-        show_info["Latest materialization's metadata entries"] = {}
-        if asset_info.get('assetMaterializations', []):
-            last_materialization = asset_info['assetMaterializations'][0]
-            show_info["Latest materialization's metadata entries"]["Last materialization timestamp"] = last_materialization.get('timestamp', 'Not available')
-
-            # handle metadata entries
-            metadata_entries_dict = {}
-            if last_materialization.get('metadataEntries', []):
-                for entry in last_materialization['metadataEntries']:
-                    label = entry.get('label', 'Not available')
-                    description = entry.get('description', 'Not available')
-                    typename = entry.get('__typename')
-
-                    value = 'Not available'
-                    if typename == 'FloatMetadataEntry':
-                        value = entry.get('floatValue', 'Not available')
-                    elif typename == 'IntMetadataEntry':
-                        value = entry.get('intValue', 'Not available')
-                    elif typename == 'JsonMetadataEntry':
-                        value = entry.get('jsonString', 'Not available')
-                    elif typename == 'BoolMetadataEntry':
-                        value = entry.get('boolValue', 'Not available')
-                    elif typename == 'MarkdownMetadataEntry':
-                        value = entry.get('mdStr', 'Not available')
-                    elif typename == 'PathMetadataEntry' or typename == 'NotebookMetadataEntry':
-                        value = entry.get('path', 'Not available')
-                    elif typename == 'PythonArtifactMetadataEntry':
-                        value = f"module: {entry.get('module', 'Not available')}, name: {entry.get('name', 'Not available')}"
-                    elif typename == 'TextMetadataEntry':
-                        value = entry.get('text', 'Not available')
-                    elif typename == 'UrlMetadataEntry':
-                        value = entry.get('url', 'Not available')
-                    elif typename == 'PipelineRunMetadataEntry':
-                        value = entry.get('runId', 'Not available')
-                    elif typename == 'AssetMetadataEntry':
-                        asset_key_path = entry.get('assetKey', {}).get('path', 'Not available')
-                        value = '/'.join(asset_key_path) if asset_key_path != 'Not available' else 'Not available'
-                    elif typename == 'NullMetadataEntry':
-                        value = 'Null'
-
-                    metadata_entries_dict[label] = value
-
-            show_info["Latest materialization's metadata entries"]["metadata_entries"] = metadata_entries_dict
-
-        packaged_command_output['show'] = show_info
+        packaged_command_output = {command: show_info}
     
     elif command == 'metrics':
         data['IO Manager Metrics']['size'] = format_size(data['IO Manager Metrics']['size'])
         data['Data Warehouse Metrics']['bytes'] = format_size(data['Data Warehouse Metrics']['bytes'])
 
         metrics_info = {
-            "Latest Orchestrator materialization metrics": data['Orchestrator Metrics'],
-            "IO Manager": data['IO Manager Metrics'],
-            "Data Warehouse": data['Data Warehouse Metrics']
+            "From orchestrator": data['Orchestrator Metrics'],
+            "From IO manager": data['IO Manager Metrics'],
+            "From data warehouse": data['Data Warehouse Metrics']
         }
         packaged_command_output = {command: metrics_info}
 
     return json.dumps(packaged_command_output, cls=DateTimeEncoder)
 
 
-def print_packaged_command_output(packaged_display_items, level=0):
+def print_packaged_command_output(packaged_display_items, level=-1):
     # Load the JSON string to a dict if it's a string
     if isinstance(packaged_display_items, str):
         packaged_display_items = json.loads(packaged_display_items)
 
+    # Define indent for readability
+    indent = ' ' * max(0, level)
+
     # Check if the current item is a dictionary
     if isinstance(packaged_display_items, dict):
         for key, value in packaged_display_items.items():
-            # If the value is a dictionary or a list, print the key as a title and recursively print the value
             if isinstance(value, (dict, list)):
-                # Top level keys are not printed
-                if int(level) > 0:
-                    click.echo(colored(f"{key}:", 'magenta'))
+                if level >= 0:  # Avoid printing the top level key
+                    # If the key is a dict and we are at the first level, don't print the dash
+                    dash = "" if level == -1 else "-"
+                    prefix = f"{dash} {key}:" if level > 0 else f"{key}:"
+                    click.echo(colored(f"{indent}{prefix}", 'yellow' if level > 1 else 'magenta').lstrip())
                 print_packaged_command_output(value, level=level + 1)
-            # If the value is not a dictionary or a list, print the key-value pair
-            else:
-                click.echo(colored(f"- {key}: ", 'yellow') + colored(f"{value}", 'green'))
+            elif level >= 0:  # Avoid printing the top level key-value pairs
+                click.echo(colored(f"{indent}- {key}: ", 'yellow') + colored(f"{value}", 'green'))
+
     # Check if the current item is a list
     elif isinstance(packaged_display_items, list):
         for value in packaged_display_items:
-            # If the value is a dictionary or a list, recursively print the value
             if isinstance(value, (dict, list)):
                 print_packaged_command_output(value, level=level + 1)
-            # If the value is not a dictionary or a list, print the value
-            else:
-                click.echo(colored(f"- {value}", 'cyan'))
-
+            elif level >= 0:  # Avoid printing the top level list items
+                click.echo(colored(f"{indent}- {value}", 'cyan'))
 
 
 def run_and_capture(func, *args, **kwargs):
@@ -208,13 +162,3 @@ def run_and_capture(func, *args, **kwargs):
         sys.stdout = old_stdout
 
     return buffer.getvalue()
-
-
-def format_size(size):
-    # size is in bytes
-    units = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-    unit = 0
-    while size >= 1024 and unit < len(units)-1:
-        size /= 1024
-        unit += 1
-    return f"{size:.2f} {units[unit]}"

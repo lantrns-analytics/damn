@@ -159,30 +159,35 @@ foo@bar:~$ damn ls --prefix gdelt
 
 ### Show details for a specific asset
 ```bash
-foo@bar:~$ damn show gdelt/gdelt_gkg_articles
+foo@bar:~$ damn show gdelt/data_warehouse/integration/int__events_actors
 ```
 
 ```
-Asset attributes:
-- description: List of gkg articles mined on GDELT
-- compute_kind: None
-- is_partitioned: True
-- auto_materialization_policy: EAGER
-- freshness_policy_lag: Not available
-- freshness_policy_cron: Not available
-Upstream assets:
-Downstream assets:
-- data_warehouse/staging/stg__gdelt__articles
-- gdelt/gdelt_articles_enhanced
-Latest materialization's metadata entries:
-- Last materialization timestamp: 1689620644665
-metadata_entries:
-- s3_path: s3://discursus-io/sources/gdelt/20230717/20230717184500.articles.csv
-- rows: 14
-- min_gdelt_gkg_article_id: 20230717184500-1056
-- max_gdelt_gkg_article_id: 20230717184500-945
-- path: platform/gdelt/gdelt_gkg_articles/20230717184500
-- uri: s3://discursus-io/platform/gdelt/gdelt_gkg_articles
+From orchestrator:
+ - description: dbt model int__events_actors
+ - computeKind: dbt
+ - policyType: LAZY
+ - maximumLagMinutes: 360.0
+ - cronSchedule: None
+ - isPartitioned: False
+- dependedByKeys:
+   - data_warehouse
+   - events_actors_bridge
+- dependencyKeys:
+   - data_warehouse
+   - integration
+   - int__events_observations
+   - data_warehouse
+   - integration
+   - int__actors
+- metadataEntries:
+  - Execution Duration: 4.183706
+From data warehouse:
+ - table_schema: analytics_integration
+ - table_type: base table
+ - created: 2023-07-05T08:36:40.935000-07:00
+ - last_altered: 2023-07-19T09:56:36.410000-07:00
+
 ```
 
 ### Show metrics for a specific asset
@@ -191,22 +196,22 @@ foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 ```
 
 ```
-Latest Orchestrator materialization metrics:
-- run_id: 9d854f77-a8aa-40bc-ae00-de40760de9af
-- status: SUCCESS
-- start_time: 2023-07-18 16:18:42
-- end_time: 2023-07-18 16:18:44
-- elapsed_time: 0:00:02.644409
-- num_partitions: 4875
-- num_materialized: 4875
-- num_failed: 0
-IO Manager:
-- files: 4888
-- size: 74.15 MB
-- last_modified: 2023-07-18T20:18:45+00:00
-Data Warehouse:
-- row_count: 19
-- bytes: 5632
+From orchestrator:
+ - run_id: 03466ceb-1c51-43ab-9384-33b6472c3f24
+ - status: SUCCESS
+ - start_time: 2023-07-19 14:19:00
+ - end_time: 2023-07-19 14:19:02
+ - elapsed_time: 0:00:02.563292
+ - num_partitions: 4963
+ - num_materialized: 4963
+ - num_failed: 0
+From IO manager:
+ - files: 4976
+ - size: 76.25 MB
+ - last_modified: 2023-07-19T18:19:03+00:00
+From data warehouse:
+ - row_count: None
+ - bytes: N/A
 ```
 
 <br/><br/>
