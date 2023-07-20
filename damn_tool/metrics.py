@@ -147,8 +147,8 @@ def get_data_warehouse_data(data_warehouse_connector, asset):
         }
 
 
-def asset_metrics(asset, orchestrator=None, io_manager=None, data_warehouse=None):
-    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
+def asset_metrics(asset, orchestrator=None, io_manager=None, data_warehouse=None, configs_dir=None):
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse, configs_dir)
     
     orchestrator_data = get_orchestrator_data(orchestrator_connector, asset) if orchestrator_connector else None
     io_manager_data = get_io_manager_data(io_manager_connector, asset) if io_manager_connector else None
@@ -172,9 +172,10 @@ def asset_metrics(asset, orchestrator=None, io_manager=None, data_warehouse=None
 @click.option('--io_manager', default=None, help='IO manager service provider to use')
 @click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(asset, orchestrator, io_manager, data_warehouse, output):
+@click.option('--configs-dir', default=None, help='Which directory to look in for the connectors.yml file. If not set, DAMN will look in the `~/.damn/` directory')
+def metrics(asset, orchestrator, io_manager, data_warehouse, output, configs_dir):
     """List your asset's metrics"""
-    packaged_command_output = asset_metrics(asset, orchestrator, io_manager, data_warehouse)
+    packaged_command_output = asset_metrics(asset, orchestrator, io_manager, data_warehouse, configs_dir)
 
     if output == 'json':
         print(packaged_command_output)

@@ -36,9 +36,9 @@ def format_size(size):
     return f"{size:.2f} {units[unit]}"
 
 
-def init_connectors(orchestrator, io_manager, data_warehouse):
+def init_connectors(orchestrator, io_manager, data_warehouse, configs_dir):
     # Initiate orchestrator
-    orchestrator_connector_type, orchestrator_config = load_config('orchestrator', orchestrator)
+    orchestrator_connector_type, orchestrator_config = load_config('orchestrator', orchestrator, configs_dir)
 
     if orchestrator_connector_type == 'dagster':
         orchestrator_connector = DagsterAdapter(orchestrator_config)
@@ -46,7 +46,7 @@ def init_connectors(orchestrator, io_manager, data_warehouse):
         orchestrator_connector = None
     
     # Initiate IO manager
-    io_manager_connector_type, io_manager_config = load_config('io-manager', io_manager)
+    io_manager_connector_type, io_manager_config = load_config('io-manager', io_manager, configs_dir)
 
     if io_manager_connector_type == 'aws':
         io_manager_connector = AWSAdapter(io_manager_config)
@@ -54,7 +54,7 @@ def init_connectors(orchestrator, io_manager, data_warehouse):
         io_manager_connector = None
 
     # Initiate data warehouse connector
-    data_warehouse_connector_type, data_warehouse_config = load_config('data-warehouse', data_warehouse)
+    data_warehouse_connector_type, data_warehouse_config = load_config('data-warehouse', data_warehouse, configs_dir)
 
     if data_warehouse_connector_type == 'snowflake':
         data_warehouse_connector = SnowflakeAdapter(data_warehouse_config)
@@ -64,9 +64,13 @@ def init_connectors(orchestrator, io_manager, data_warehouse):
     return orchestrator_connector, io_manager_connector, data_warehouse_connector
     
 
-def load_config(connector, profile):
+def load_config(connector, profile, configs_dir):
     # Create the Jinja environment and register the os.getenv function
-    env = Environment(loader=FileSystemLoader(os.path.expanduser('~/.damn')), autoescape=select_autoescape(['yaml']))
+    if configs_dir is not None:
+        env = Environment(loader=FileSystemLoader(os.path.expanduser(configs_dir)), autoescape=select_autoescape(['yaml']))
+    else:
+        env = Environment(loader=FileSystemLoader(os.path.expanduser('~/.damn')), autoescape=select_autoescape(['yaml']))
+    
     env.globals['env'] = os.getenv
 
     # Render the template

@@ -1,12 +1,10 @@
 import click
 
-from .utils.helpers import load_config
-
 from .ls import ls
 from .show import show
 from .metrics import metrics
 
-@click.group(invoke_without_command=True)
+@click.group()
 @click.pass_context
 def cli(ctx):
     pass
