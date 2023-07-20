@@ -147,18 +147,9 @@ def get_data_warehouse_data(data_warehouse_connector, asset):
         }
 
 
-@click.command()
-@click.argument('asset', type=str)
-@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
-@click.option('--io_manager', default=None, help='IO manager service provider to use')
-@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
-@click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def metrics(asset, orchestrator, io_manager, data_warehouse, output):
-    """List your asset's metrics"""
-    # Initialize connectors
+def asset_metrics(asset, orchestrator=None, io_manager=None, data_warehouse=None):
     orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
     
-    # Get metrics
     orchestrator_data = get_orchestrator_data(orchestrator_connector, asset) if orchestrator_connector else None
     io_manager_data = get_io_manager_data(io_manager_connector, asset) if io_manager_connector else None
     data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset) if data_warehouse_connector else None
@@ -169,8 +160,21 @@ def metrics(asset, orchestrator, io_manager, data_warehouse, output):
         "Data Warehouse Metrics": data_warehouse_data
     }
 
-    # Package and output metrics
+    # Package and output asset information
     packaged_command_output = package_command_output('metrics', data)
+    
+    return packaged_command_output
+
+
+@click.command()
+@click.argument('asset', type=str)
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
+@click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
+def metrics(asset, orchestrator, io_manager, data_warehouse, output):
+    """List your asset's metrics"""
+    packaged_command_output = asset_metrics(asset, orchestrator, io_manager, data_warehouse)
 
     if output == 'json':
         print(packaged_command_output)

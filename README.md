@@ -119,15 +119,24 @@ damn ls --orchestrator dagster --io-manager aws --data-warehouse snowflake
 
 
 ## Usage
-Here are some examples of how to use this CLI tool:
+The DAMN tool is both a CLI tool and a python library.
 
 ### Output option
-Note that all commands support an `output` option which allows flexibility in how the DAMN tool might be used:
+Note that in CLI model, commands support an `output` option which allows flexibility in how the DAMN tool might be used:
 - `terminal`: By default, the output of commands will be printed to the terminal
 - `json`: You can also have the output as a `json` object, which is more useful if you're to use DAMN in a programmatic way.
 - `copy`: You can also copy the output to your clipboard, which is useful if you want to share an asset's metrics in a PR for example.
 
 ### List assets
+In python...
+```python
+from damn_tool.ls import list_assets
+
+result = list_assets()
+print(result)
+```
+
+From the command line...
 ```bash
 foo@bar:~$ damn ls
 ```
@@ -143,6 +152,15 @@ foo@bar:~$ damn ls
 ```
 
 List all assets for a specifc key group
+In python...
+```python
+from damn_tool.ls import list_assets
+
+result = list_assets(prefix='gdelt')
+print(result)
+```
+
+From the command line...
 ```bash
 foo@bar:~$ damn ls --prefix gdelt
 ```
@@ -158,6 +176,15 @@ foo@bar:~$ damn ls --prefix gdelt
 ```
 
 ### Show details for a specific asset
+In python...
+```python
+from damn_tool.show import show_asset
+
+result = show_asset('gdelt/gdelt_articles_enhanced')
+print(result)
+```
+
+From the command line...
 ```bash
 foo@bar:~$ damn show gdelt/data_warehouse/integration/int__events_actors
 ```
@@ -191,6 +218,15 @@ From data warehouse:
 ```
 
 ### Show metrics for a specific asset
+In python...
+```python
+from damn_tool.metrics import asset_metrics
+
+result = asset_metrics('gdelt/gdelt_articles_enhanced')
+print(result)
+```
+
+From the command line...
 ```bash
 foo@bar:~$ damn metrics gdelt/gdelt_gkg_articles
 ```

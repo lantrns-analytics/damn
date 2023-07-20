@@ -204,20 +204,11 @@ def get_data_warehouse_data(data_warehouse_connector, asset):
             'created': None,
             'last_altered': None
         }
+    
 
-
-@click.command()
-@click.argument('asset', required=True)
-@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
-@click.option('--io_manager', default=None, help='IO manager service provider to use')
-@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
-@click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def show(asset, orchestrator, io_manager, data_warehouse, output):
-    """Show details for a specific asset"""
-    # Initialize connectors
+def show_asset(asset, orchestrator=None, io_manager=None, data_warehouse=None):
     orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
-
-    # Get asset information
+    
     orchestrator_data = get_orchestrator_data(orchestrator_connector, asset) if orchestrator_connector else None
     data_warehouse_data = get_data_warehouse_data(data_warehouse_connector, asset) if data_warehouse_connector else None
 
@@ -228,6 +219,19 @@ def show(asset, orchestrator, io_manager, data_warehouse, output):
 
     # Package and output asset information
     packaged_command_output = package_command_output('show', data)
+    
+    return packaged_command_output
+
+
+@click.command()
+@click.argument('asset', required=True)
+@click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
+@click.option('--io_manager', default=None, help='IO manager service provider to use')
+@click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
+@click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
+def show(asset, orchestrator, io_manager, data_warehouse, output):
+    """Show details for a specific asset"""
+    packaged_command_output = show_asset(asset, orchestrator, io_manager, data_warehouse)
 
     if output == 'json':
         print(packaged_command_output)
