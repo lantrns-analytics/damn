@@ -47,8 +47,8 @@ def get_orchestrator_data(orchestrator_connector, prefix):
     return result
 
 
-def list_assets(prefix=None, orchestrator=None, io_manager=None, data_warehouse=None):
-    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
+def list_assets(prefix=None, orchestrator=None, io_manager=None, data_warehouse=None, configs_dir=None):
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse, configs_dir)
     
     orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix) if orchestrator_connector else None
     packaged_command_output = package_command_output('ls', orchestrator_data)
@@ -62,9 +62,10 @@ def list_assets(prefix=None, orchestrator=None, io_manager=None, data_warehouse=
 @click.option('--io_manager', default=None, help='IO manager service provider to use')
 @click.option('--data-warehouse', default=None, help='Data warehouse service provider to use')
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
-def ls(prefix, orchestrator, io_manager, data_warehouse, output):
+@click.option('--configs-dir', default=None, help='Which directory to look in for the connectors.yml file. If not set, DAMN will look in the `~/.damn/` directory')
+def ls(prefix, orchestrator, io_manager, data_warehouse, output, configs_dir):
     """List your platform's data assets"""
-    packaged_command_output = list_assets(prefix, orchestrator, io_manager, data_warehouse)
+    packaged_command_output = list_assets(prefix, orchestrator, io_manager, data_warehouse, configs_dir)
 
     if output == 'json':
         print(packaged_command_output)

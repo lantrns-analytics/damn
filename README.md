@@ -48,7 +48,7 @@ The DAMN tool leverages various connectors to interact with different service pr
 
 
 ### Configurations
-Configuring these connectors is done via a YAML file located at `~/.damn/connectors.yml`.
+Configuring these connectors is done via a YAML file located at `~/.damn/connectors.yml`. You can override the location of those connector configurations using the `--configs-dir` option.
 
 [*See example configuration file here*](connectors.yml.REPLACE)
 
