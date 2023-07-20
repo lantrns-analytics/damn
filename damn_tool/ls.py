@@ -47,6 +47,13 @@ def get_orchestrator_data(orchestrator_connector, prefix):
     return result
 
 
+def list_assets(prefix=None, orchestrator=None, io_manager=None, data_warehouse=None):
+    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
+    orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix) if orchestrator_connector else None
+    packaged_command_output = package_command_output('ls', orchestrator_data)
+    return packaged_command_output
+
+
 @click.command()
 @click.option('--prefix', default=None, help='Get list of assets with a given prefix')
 @click.option('--orchestrator', default=None, help='Orchestrator service provider to use')
@@ -55,14 +62,7 @@ def get_orchestrator_data(orchestrator_connector, prefix):
 @click.option('--output', default='terminal', help='Destination for command output. Options include `terminal` (default) for standard output, `json` to format output as JSON, or `copy` to copy the output to the clipboard.')
 def ls(prefix, orchestrator, io_manager, data_warehouse, output):
     """List your platform's data assets"""
-    # Initialize connectors
-    orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
-
-    # Get assets
-    orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix) if orchestrator_connector else None
-
-    # Package and output assets
-    packaged_command_output = package_command_output('ls', orchestrator_data)
+    packaged_command_output = list_assets(prefix, orchestrator, io_manager, data_warehouse)
 
     if output == 'json':
         print(packaged_command_output)
