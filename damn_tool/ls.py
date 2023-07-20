@@ -49,8 +49,10 @@ def get_orchestrator_data(orchestrator_connector, prefix):
 
 def list_assets(prefix=None, orchestrator=None, io_manager=None, data_warehouse=None):
     orchestrator_connector, io_manager_connector, data_warehouse_connector = init_connectors(orchestrator, io_manager, data_warehouse)
+    
     orchestrator_data = get_orchestrator_data(orchestrator_connector, prefix) if orchestrator_connector else None
     packaged_command_output = package_command_output('ls', orchestrator_data)
+    
     return packaged_command_output
 
 
