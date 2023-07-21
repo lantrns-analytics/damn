@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "damn-tool"
-version = "0.1.4"
+version = "0.1.5"
 description = "The DAMN (Data Assets Metric Navigation) tool extracts and reports metrics about your data assets"
 authors = ["Olivier Dupuis <odupuis@lantrns.co>"]
 readme = "README.md"
